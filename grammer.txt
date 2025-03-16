@@ -1,0 +1,115 @@
+Letter : a | . . . | z | A | . . . | Z
+Digit : 0 | . . . | 9 
+Number : Digit Digit*
+Floating: Number "." Number
+Char : "'" Σ "'"
+String : """ Σ* """
+CompoundAssignOp : -= | += | *= | /= | %=
+RelOp : <= | < | > | >= | == | ! =
+TernaryOp : MathExpr "if" LogicalExpr "else" MathExpr |
+    LogicalExpr "if" LogicalExpr "else" LogicalExpr |
+    Char "if" LogicalExpr "else" Char |
+    String "if" LogicalExpr "else" String
+Ident : Letter(Digit | Letter | "_")*
+ArrayElement : Ident "[" (Ident | Number) "]"
+
+Program : (IntDecl | FloatDecl | CharDecl | StringDecl | BoolDecl | ArrayDecl | IfStmt | 
+    IntAssignStmt | FloatAssignStmt | BoolAssignStmt | CharAssignStmt | StringAssignStmt | 
+    Comment | UnaryExpr | ForStmt | ForeachStmt | PrintStmt | ConcatStmt | PowStmt | AbsStmt | 
+    LengthStmt | MinStmt | MaxStmt | IndexStmt | AddStmt | SubtractStmt | MultiplyStmt | 
+    DivideStmt | TryCatchStmt | MatchStmt)*
+
+IntDecl : "int" (SimpleNumericDeclAssign | ChainedNumericDeclAssign) ";"
+FloatDecl : "float" (SimpleNumericDeclAssign | ChainedNumericDeclAssign) ";"
+SimpleNumericDeclAssign : ((NumericDeclAssign | Ident) ",")* (NumericDeclAssign | Ident) 
+ChainedNumericDeclAssign : Ident "," ChainedNumericDeclAssign "," MathExpr | NumericDeclAssign
+NumericDeclAssign : Ident "=" MathExpr
+
+BoolDecl : "bool" (SimpleBoolDeclAssign | ChainedBoolDeclAssign) ";"
+SimpleBoolDeclAssign : ((BoolDeclAssign | Ident) ",")* (BoolDeclAssign | Ident) 
+ChainedBoolDeclAssign : Ident "," ChainedBoolDeclAssign "," LogicalExpr | BoolDeclAssign
+BoolDeclAssign : Ident "=" LogicalExpr
+
+CharDecl : "char" (SimpleCharDeclAssign | ChainedCharDeclAssign) ";"
+SimpleCharDeclAssign : ((CharDeclAssign | Ident) ",")* (CharDeclAssign | Ident) 
+ChainedCharDeclAssign : Ident "," ChainedCharDeclAssign "," Char | CharDeclAssign
+CharDeclAssign : Ident "=" Char
+
+StringDecl : "string" (SimpleStringDeclAssign | ChainedStringDeclAssign) ";"
+SimpleStringDeclAssign : ((StringDeclAssign | Ident) ",")* (StringDeclAssign | Ident) 
+ChainedStringDeclAssign : Ident "," ChainedStringDeclAssign "," String | StringDeclAssign
+StringDeclAssign : Ident "=" String
+
+ArrayDecl : "string" (SimpleArrayDeclAssign | ChainedArrayDeclAssign) ";"
+SimpleArrayDeclAssign : ((ArrayDeclAssign | Ident) ",")* (ArrayDeclAssign | Ident) 
+ChainedArrayDeclAssign : Ident "," ChainedArrayDeclAssign "," ArrayLiteral | ArrayDeclAssign
+ArrayDeclAssign : Ident "=" ArrayLiteral
+ArrayLiteral : "[" (NumericElements | CharElements | StringElements) "]"
+NumericElements : ((Number | Floating) ",")* (Number | Floating)
+CharElements : (Char ",")* Char
+StringElements : (String ",")* String
+
+IntAssignStmt : Ident (CompoundAssignOp MathExpr | "=" TernaryOp) ";"
+
+FloatAssignStmt : Ident (CompoundAssignOp MathExpr | "=" TernaryOp) ";"
+
+BoolAssignStmt : Ident "=" (LogicalExpr | TernaryOp) ";"
+
+CharAssignStmt : Ident "=" (char | TernaryOp) ";"
+
+StringAssignStmt : Ident "=" (String | TernaryOp) ";"
+
+LogicalExpr : ConjuctiveExpr ("or" ConjuctiveExpr)*
+ConjuctiveExpr : Comparison ("and" Comparison)*
+Comparison : MathExpr RelOp MathExpr | "(" LogicalExpr ")" | "true" | "false" | Ident
+
+MathExpr : Term (("+" | "-") Term)*
+Term : Factor (("*" | "/" | "%") Factor)*
+Factor : Final ("^" Final)
+Final : Ident | Ident ("++" | "--") | "+" (Number | Floating) | "-" (Number | Floating) | "-" (MathExpr)
+
+UnaryExpr : (Ident | ArrayElement) ("++" | "--") ";"
+
+IfStmt : "if" "(" LogicalExpr ")" "{" Body "}" ElseIfStmt |
+    "if" "(" LogicalExpr ")" "{" Body "}" ElseIfStmt "else" "{" Body "}"
+ElseIfStmt : ("else" "if" "(" LogicalExpr ")" "{" Body "}")*
+
+ForStmt : "for" "(" (IntDecl | FloatDecl | CharDecl | StringDecl | ArrayDecl) ";" LogicalExpr ";" MathExpr ")"  "{" Body "}"
+
+ForeachStmt : "foreach" "(" Ident "in" Ident ")" "{" Body "}"
+
+Body : (IfStmt | IntAssignStmt | FloatAssignStmt | BoolAssignStmt | CharAssignStmt | StringAssignStmt | 
+    Comment | UnaryExpr | ForStmt | ForeachStmt | PrintStmt | ConcatStmt | PowStmt | AbsStmt | LengthStmt | 
+    MinStmt | MaxStmt | IndexStmt | AddStmt | SubtractStmt | MultiplyStmt | DivideStmt | TryCatchStmt | MatchStmt)*
+
+Comment : "/*" Σ* "*/"
+
+PrintStmt : "print" "(" (Ident | MathExpr | LogicalExpr) ")" ";"
+
+ConcatStmt : "concat" "(" (Ident | String) "," (Ident | String) ")" ";"
+
+PowStmt : "pow" "(" (Ident | Number) "," (Ident | Number) ")" ";"
+
+AbsStmt : "abs" "(" (Ident | Number | Floating) ")" ";"
+
+LengthStmt : "length" "(" Ident ")" ";"
+
+MinStmt : "min" "(" Ident ")" ";"
+
+MaxStmt : "max" "(" Ident ")" ";" 
+
+IndexStmt : "index" "(" Ident "," (Ident | Number) ")" ";" 
+
+AddStmt : "add" "(" Ident "," Ident ")" ";"
+
+SubtractStmt : "subtract" "(" Ident "," Ident ")" ";"
+
+MultiplyStmt : "multiply" "(" Ident "," Ident ")" ";"
+
+DivideStmt : "divide" "(" Ident "," Ident ")" ";"
+
+TryCatchStmt : "try" "{" Body "}" "catch" "(" "Error" Ident ")" "{" Body "}"
+
+MatchStmt : "match" Ident "{" (Pattern ",")* Pattern "}" | 
+    "match" Ident "{" (Pattern ",")* "_" "->" Body "}"
+Pattern : (Number, Floating, Char, String) "->" Body
