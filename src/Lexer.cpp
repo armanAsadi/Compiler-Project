@@ -23,7 +23,7 @@ namespace charinfo
 
     LLVM_READNONE inline bool isSpecialCharacter(char c)
     {
-        return c == '=' || c == '+' || c == '-' || c == '*' || c == '/' || c == '!' || c == '>' || c == '<' || c == '(' || c == ')' || c == '{' || c == '}'|| c == ',' || c == ';' || c == '%' || c == '^' || c == '_' || c == '\'' || c == '\"';
+        return c == '=' || c == '+' || c == '-' || c == '*' || c == '/' || c == '!' || c == '>' || c == '<' || c == '(' || c == ')' || c == '{' || c == '}' || c == '[' || c == ']' || c == ',' || c == ';' || c == '%' || c == '^' || c == '_' || c == '\'' || c == '\"';
     }
 }
 
@@ -271,14 +271,6 @@ void Lexer::next(Token &token) {
             kind = Token::comma;
             isFound = true;
             end = endWithOneLetter;
-        } else if (NameWithOneLetter == "\'"){
-            kind = Token::single_quote;
-            isFound = true;
-            end = endWithOneLetter;
-        } else if (NameWithOneLetter == "\""){
-            kind = Token::double_quote;
-            isFound = true;
-            end = endWithOneLetter;
         } else if (NameWithOneLetter == "%"){
             kind = Token::mod;
             isFound = true;
@@ -287,6 +279,30 @@ void Lexer::next(Token &token) {
             kind = Token::exp;
             isFound = true;
             end = endWithOneLetter;
+        } else if (NameWithOneLetter == "\'"){  // check for char literal
+            
+            end = endWithOneLetter;
+            if(*end)
+                ++end;
+
+            if (*end == '\''){
+                kind = Token::character;
+                isFound = true;
+                ++end;
+            }
+
+        } else if (NameWithOneLetter == "\""){  // check for string literal
+            
+            end = endWithOneLetter;
+            while (*end && *end != '\"')
+                ++end;
+
+            if (*end){
+                kind = Token::string;
+                isFound = true;
+                ++end;
+            }
+
         }
         
         // generate the token

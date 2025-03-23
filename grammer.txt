@@ -5,7 +5,7 @@ Floating: Number "." Number
 Char : "'" Σ "'"
 String : """ Σ* """
 CompoundAssignOp : -= | += | *= | /= | %=
-RelOp : <= | < | > | >= | == | ! =
+RelOp : <= | < | > | >= | == | !=
 TernaryOp : MathExpr "if" LogicalExpr "else" MathExpr |
     LogicalExpr "if" LogicalExpr "else" LogicalExpr |
     Char "if" LogicalExpr "else" Char |
@@ -19,30 +19,25 @@ Program : (IntDecl | FloatDecl | CharDecl | StringDecl | BoolDecl | ArrayDecl | 
     LengthStmt | MinStmt | MaxStmt | IndexStmt | AddStmt | SubtractStmt | MultiplyStmt | 
     DivideStmt | TryCatchStmt | MatchStmt)*
 
-IntDecl : "int" (SimpleNumericDeclAssign | ChainedNumericDeclAssign) ";"
+IntDecl : "int" (NumericDeclAssign | "=" TernaryOp) ";"
 FloatDecl : "float" (SimpleNumericDeclAssign | ChainedNumericDeclAssign) ";"
-SimpleNumericDeclAssign : ((NumericDeclAssign | Ident) ",")* (NumericDeclAssign | Ident) 
-ChainedNumericDeclAssign : Ident "," ChainedNumericDeclAssign "," MathExpr | NumericDeclAssign
+NumericDeclAssign : ((NumericDeclAssign | Ident) ",")* (NumericDeclAssign | Ident) 
 NumericDeclAssign : Ident "=" MathExpr
 
-BoolDecl : "bool" (SimpleBoolDeclAssign | ChainedBoolDeclAssign) ";"
-SimpleBoolDeclAssign : ((BoolDeclAssign | Ident) ",")* (BoolDeclAssign | Ident) 
-ChainedBoolDeclAssign : Ident "," ChainedBoolDeclAssign "," LogicalExpr | BoolDeclAssign
+BoolDecl : "bool" (BoolDeclAssign | "=" TernaryOp) ";"
+BoolDeclAssign : ((BoolDeclAssign | Ident) ",")* (BoolDeclAssign | Ident) 
 BoolDeclAssign : Ident "=" LogicalExpr
 
-CharDecl : "char" (SimpleCharDeclAssign | ChainedCharDeclAssign) ";"
-SimpleCharDeclAssign : ((CharDeclAssign | Ident) ",")* (CharDeclAssign | Ident) 
-ChainedCharDeclAssign : Ident "," ChainedCharDeclAssign "," Char | CharDeclAssign
+CharDecl : "char" (CharDeclAssign | "=" TernaryOp) ";"
+CharDeclAssign : ((CharDeclAssign | Ident) ",")* (CharDeclAssign | Ident) 
 CharDeclAssign : Ident "=" Char
 
-StringDecl : "string" (SimpleStringDeclAssign | ChainedStringDeclAssign) ";"
-SimpleStringDeclAssign : ((StringDeclAssign | Ident) ",")* (StringDeclAssign | Ident) 
-ChainedStringDeclAssign : Ident "," ChainedStringDeclAssign "," String | StringDeclAssign
+StringDecl : "string" (StringDeclAssign | "=" TernaryOp) ";"
+StringDeclAssign : ((StringDeclAssign | Ident) ",")* (StringDeclAssign | Ident) 
 StringDeclAssign : Ident "=" String
 
-ArrayDecl : "string" (SimpleArrayDeclAssign | ChainedArrayDeclAssign) ";"
-SimpleArrayDeclAssign : ((ArrayDeclAssign | Ident) ",")* (ArrayDeclAssign | Ident) 
-ChainedArrayDeclAssign : Ident "," ChainedArrayDeclAssign "," ArrayLiteral | ArrayDeclAssign
+ArrayDecl : "string" ArrayDeclAssign ";"
+ArrayDeclAssign : ((ArrayDeclAssign | Ident) ",")* (ArrayDeclAssign | Ident) 
 ArrayDeclAssign : Ident "=" ArrayLiteral
 ArrayLiteral : "[" (NumericElements | CharElements | StringElements) "]"
 NumericElements : ((Number | Floating) ",")* (Number | Floating)

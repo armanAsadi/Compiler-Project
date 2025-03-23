@@ -9,11 +9,17 @@ class AST;
 class Expr;
 class Program;
 class DeclarationInt;
+class DeclarationFloat;
 class DeclarationBool;
+class DeclarationChar;
+class DeclarationString;
+class DeclarationArray;
+class Array;
 class Final;
 class BinaryOp;
 class UnaryOp;
 class SignedNumber;
+class SignedFloating;
 class NegExpr;
 class Assignment;
 class Logic;
@@ -123,6 +129,32 @@ public:
 };
 
 // Declaration class represents a variable declaration with an initializer in the AST
+class DeclarationFloat : public Program
+{
+  using VarVector = llvm::SmallVector<llvm::StringRef>;
+  using ValueVector = llvm::SmallVector<Expr *>;
+  VarVector Vars;                           // Stores the list of variables
+  ValueVector Values;                       // Stores the list of initializers
+
+public:
+  // Declaration(llvm::SmallVector<llvm::StringRef> Vars, Expr *E) : Vars(Vars), E(E) {}
+  DeclarationFloat(llvm::SmallVector<llvm::StringRef> Vars, llvm::SmallVector<Expr *> Values) : Vars(Vars), Values(Values) {}
+
+  VarVector::const_iterator varBegin() { return Vars.begin(); }
+
+  VarVector::const_iterator varEnd() { return Vars.end(); }
+
+  ValueVector::const_iterator valBegin() { return Values.begin(); }
+
+  ValueVector::const_iterator valEnd() { return Values.end(); }
+
+  virtual void accept(ASTVisitor &V) override
+  {
+    V.visit(*this);
+  }
+};
+
+// Declaration class represents a variable declaration with an initializer in the AST
 class DeclarationBool : public Program
 {
   using VarVector = llvm::SmallVector<llvm::StringRef>;
@@ -148,6 +180,115 @@ public:
   }
 };
 
+// Declaration class represents a variable declaration with an initializer in the AST
+class DeclarationChar : public Program
+{
+  using VarVector = llvm::SmallVector<llvm::StringRef>;
+  using ValueVector = llvm::SmallVector<llvm::StringRef>;
+  VarVector Vars;                           // Stores the list of variables
+  ValueVector Values;                       // Stores the list of initializers
+
+public:
+  // Declaration(llvm::SmallVector<llvm::StringRef> Vars, Expr *E) : Vars(Vars), E(E) {}
+  DeclarationChar(llvm::SmallVector<llvm::StringRef> Vars, llvm::SmallVector<llvm::StringRef> Values) : Vars(Vars), Values(Values) {}
+
+  VarVector::const_iterator varBegin() { return Vars.begin(); }
+
+  VarVector::const_iterator varEnd() { return Vars.end(); }
+
+  ValueVector::const_iterator valBegin() { return Values.begin(); }
+
+  ValueVector::const_iterator valEnd() { return Values.end(); }
+
+  virtual void accept(ASTVisitor &V) override
+  {
+    V.visit(*this);
+  }
+};
+
+// Declaration class represents a variable declaration with an initializer in the AST
+class DeclarationString : public Program
+{
+  using VarVector = llvm::SmallVector<llvm::StringRef>;
+  using ValueVector = llvm::SmallVector<llvm::StringRef>;
+  VarVector Vars;                           // Stores the list of variables
+  ValueVector Values;                       // Stores the list of initializers
+
+public:
+  // Declaration(llvm::SmallVector<llvm::StringRef> Vars, Expr *E) : Vars(Vars), E(E) {}
+  DeclarationString(llvm::SmallVector<llvm::StringRef> Vars, llvm::SmallVector<llvm::StringRef> Values) : Vars(Vars), Values(Values) {}
+
+  VarVector::const_iterator varBegin() { return Vars.begin(); }
+
+  VarVector::const_iterator varEnd() { return Vars.end(); }
+
+  ValueVector::const_iterator valBegin() { return Values.begin(); }
+
+  ValueVector::const_iterator valEnd() { return Values.end(); }
+
+  virtual void accept(ASTVisitor &V) override
+  {
+    V.visit(*this);
+  }
+};
+
+class DeclarationArray : public Program
+{
+  using VarVector = llvm::SmallVector<llvm::StringRef>;
+  using ValueVector = llvm::SmallVector<Array *>;
+  VarVector Vars;                           // Stores the list of variables
+  ValueVector Values;                       // Stores the list of initializers
+
+public:
+  DeclarationArray(llvm::SmallVector<llvm::StringRef> Vars, llvm::SmallVector<Array *> Values) : Vars(Vars), Values(Values) {}
+
+  VarVector::const_iterator varBegin() { return Vars.begin(); }
+
+  VarVector::const_iterator varEnd() { return Vars.end(); }
+
+  ValueVector::const_iterator valBegin() { return Values.begin(); }
+
+  ValueVector::const_iterator valEnd() { return Values.end(); }
+
+  virtual void accept(ASTVisitor &V) override
+  {
+    V.visit(*this);
+  }
+};
+
+class Array : public Program
+{
+public:
+  enum DataType
+  {
+    Int,
+    Float,
+    Bool,
+    Char,
+    String,
+    Unknown
+  };
+
+private:
+  using ValueVector = llvm::SmallVector<llvm::StringRef>;
+  ValueVector Values;
+  DataType Type;
+
+public:
+  Array(DataType Type, llvm::SmallVector<llvm::StringRef> Values) : Type(Type), Values(Values) {}
+
+  DataType getType() { return Type; }
+  
+  ValueVector::const_iterator valBegin() { return Values.begin(); }
+
+  ValueVector::const_iterator valEnd() { return Values.end(); }
+
+  virtual void accept(ASTVisitor &V) override
+  {
+    V.visit(*this);
+  }
+};
+
 
 // Final class represents a Final in the AST (either an identifier or a number or true or false)
 class Final : public Expr
@@ -156,7 +297,9 @@ public:
   enum ValueKind
   {
     Ident,
-    Number
+    Number,
+    Floating,
+    Char,
   };
 
 private:
@@ -263,6 +406,32 @@ public:
   }
 };
 
+class SignedFloating : public Expr
+{
+public:
+  enum Sign
+  {
+    Plus,
+    Minus
+  };
+
+private:
+  llvm::StringRef Value;                              
+  Sign s;                              
+
+public:
+  SignedFloating(Sign S, llvm::StringRef V) : s(S), Value(V) {}
+
+  llvm::StringRef getValue() { return Value; }
+
+  Sign getSign() { return s; }
+
+  virtual void accept(ASTVisitor &V) override
+  {
+    V.visit(*this);
+  }
+};
+
 class NegExpr : public Expr
 {
 
@@ -293,19 +462,25 @@ class Assignment : public Program
     Slash_assign,   // /=
 };
 private:
-  Final *Left;                             // Left-hand side Final (identifier)
-  Expr *RightExpr;                         // Right-hand side expression
-  Logic *RightLogicExpr;                   // Right-hand side logical expression
-  AssignKind AK;                           // Kind of assignment
+  Final *Left;                            // Left-hand side Final (identifier)
+  Expr *RightExpr;                        // Right-hand side expression
+  Logic *RightLogicExpr;                  // Right-hand side logical expression
+  llvm::StringRef RightChar;              // Right-hand side char literal
+  llvm::StringRef RightString;            // Right-hand side string literal
+  AssignKind AK;                          // Kind of assignment
 
 public:
-  Assignment(Final *L, Expr *RE, AssignKind AK, Logic *RL) : Left(L), RightExpr(RE), AK(AK), RightLogicExpr(RL) {}
+  Assignment(Final *L, Expr *RE, AssignKind AK, Logic *RL, llvm::StringRef RC, llvm::StringRef RS) : Left(L), RightExpr(RE), AK(AK), RightLogicExpr(RL), RightChar(RC), RightString(RS) {}
 
   Final *getLeft() { return Left; }
 
   Expr *getRightExpr() { return RightExpr; }
 
   Logic *getRightLogic() { return RightLogicExpr; }
+
+  llvm::StringRef getRightChar() { return RightChar; }
+
+  llvm::StringRef getRightString() { return RightString; }
 
   AssignKind getAssignKind() { return AK; }
 

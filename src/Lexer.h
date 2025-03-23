@@ -18,8 +18,8 @@ public:
         ident,          // identifier
         number,         // integer literal
         floating,       // float literal
-        char_literal,   // char literal
-        string_literal, // string literal
+        character,      // char literal
+        string,         // string literal
         assign,         // =
         minus_assign,   // -=
         plus_assign,    // +=
@@ -40,8 +40,6 @@ public:
         end_comment,    // */
         comma,          // ,
         semicolon,      // ;
-        single_quote,   // '
-        double_quote,   // "
         plus,           // +
         minus,          // -
         star,           // *
@@ -107,6 +105,7 @@ public:
     template <typename... Ts>
     bool isOneOf(TokenKind K1, TokenKind K2, Ts... Ks)
         const { return is(K1) || isOneOf(K2, Ks...); }
+
 };
 
 class Lexer

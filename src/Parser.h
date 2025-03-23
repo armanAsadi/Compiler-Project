@@ -42,14 +42,21 @@ class Parser
 
     Program *parseProgram();
     DeclarationInt *parseIntDec();
+    DeclarationFloat *parseFloatDec();
     DeclarationBool *parseBoolDec();
+    DeclarationChar *parseCharDec();
+    DeclarationString *parseStringDec();
+    DeclarationArray *parseArrayDec();
     Assignment *parseBoolAssign();
     Assignment *parseIntAssign();
+    Assignment *parseCharAssign();
+    Assignment *parseStringAssign();
     UnaryOp *parseUnary();
     Expr *parseExpr();
     Expr *parseTerm();
     Expr *parseFinal();
     Expr *parseFactor();
+    Array *parseArray();
     Logic *parseLogic();
     Logic *parseComparison();
     IfStmt *parseIf();
