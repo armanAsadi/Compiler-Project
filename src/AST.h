@@ -29,7 +29,10 @@ class IfStmt;
 class WhileStmt;
 class elifStmt;
 class ForStmt;
+class ForeachStmt;
+class TryCatchStmt;
 class PrintStmt;
+class ConcatStmt;
 
 // ASTVisitor class defines a visitor pattern to traverse the AST
 class ASTVisitor
@@ -364,7 +367,7 @@ public:
   };
 
 private:
-  llvm::StringRef Ident;                      
+  llvm::StringRef Ident;
   Operator Op;                              // Operator of the unary operation
 
 public:
@@ -672,15 +675,90 @@ public:
   }
 };
 
+class ForeachStmt : public Program{
+  using BodyVector = llvm::SmallVector<AST *>;
+  BodyVector Body;
+
+private:
+  llvm::StringRef Left;
+  llvm::StringRef Right;
+
+public:
+  ForeachStmt(llvm::StringRef Left, llvm::StringRef Right, llvm::SmallVector<AST *> Body) : Left(Left), Right(Right), Body(Body) {}
+
+  llvm::StringRef getLeft() { return Left; }
+
+  llvm::StringRef getRight() { return Right; }
+
+  BodyVector::const_iterator begin() { return Body.begin(); }
+  
+  BodyVector::const_iterator end() { return Body.end(); }
+
+  virtual void accept(ASTVisitor &V) override
+  {
+    V.visit(*this);
+  }  
+};
+
+class TryCatchStmt : public Program
+{
+  using BodyVector = llvm::SmallVector<AST *>;
+  BodyVector TryBody;
+  BodyVector CatchBody;
+
+private:
+  llvm::StringRef Error;
+
+public:
+  TryCatchStmt(llvm::StringRef Error, BodyVector TryBody, BodyVector CatchBody) : Error(Error), TryBody(TryBody), CatchBody(CatchBody) {}
+
+  llvm::StringRef getError() { return Error; }
+
+  BodyVector getTryBody() { return TryBody; }
+
+  BodyVector getCatchBody() { return CatchBody; }
+
+  virtual void accept(ASTVisitor &V) override
+  {
+    V.visit(*this);
+  } 
+};
+
+
 class PrintStmt : public Program
 {
 private:
+  Expr *ExprParam;
+  Logic *LogicExprParam;
   llvm::StringRef Var;
   
 public:
-  PrintStmt(llvm::StringRef Var) : Var(Var) {}
+  PrintStmt(Expr *EP, Logic *LEP, llvm::StringRef Var) : ExprParam(EP), LogicExprParam(LEP), Var(Var) {}
+
+  Expr* getExprParam() { return ExprParam; }
+
+  Logic* getLogicExprParam() { return LogicExprParam; }
 
   llvm::StringRef getVar() { return Var; }
+
+  virtual void accept(ASTVisitor &V) override
+  {
+    V.visit(*this);
+  }
+};
+
+class ConcatStmt : public Program
+{
+private:
+  llvm::StringRef First;
+  llvm::StringRef Second;
+  
+public:
+  ConcatStmt(llvm::StringRef First, llvm::StringRef Second) : First(First), Second(Second) {}
+
+  llvm::StringRef getFirst() { return First; }
+
+  llvm::StringRef getSecond() { return Second; }
 
   virtual void accept(ASTVisitor &V) override
   {

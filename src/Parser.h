@@ -56,13 +56,16 @@ class Parser
     Expr *parseTerm();
     Expr *parseFinal();
     Expr *parseFactor();
-    Array *parseArray();
     Logic *parseLogic();
     Logic *parseComparison();
+    Array *parseArray();
     IfStmt *parseIf();
     WhileStmt *parseWhile();
     ForStmt *parseFor();
+    ForeachStmt *parseForeach();
+    TryCatchStmt *parseTryCatch();
     PrintStmt *parsePrint();
+    ConcatStmt *parseConcat();
     void parseComment();
     llvm::SmallVector<AST *> getBody();
 

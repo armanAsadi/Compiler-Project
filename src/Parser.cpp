@@ -183,11 +183,41 @@ Program *Parser::parseProgram()
             }
             break;
         }
+        case Token::KW_foreach: {
+            ForeachStmt *fe;
+            fe = parseForeach();
+            if (fe)
+                data.push_back(fe);
+            else {
+                goto _error;
+            }
+            break;
+        }
+        case Token::KW_try: {
+            TryCatchStmt *tc;
+            tc = parseTryCatch();
+            if (tc)
+                data.push_back(tc);
+            else {
+                goto _error;
+            }
+            break;
+        }
         case Token::KW_print: {
             PrintStmt *p;
             p = parsePrint();
             if (p)
                 data.push_back(p);
+            else {
+                goto _error;
+            }
+            break;
+        }
+        case Token::KW_concat: {
+            ConcatStmt *c;
+            c = parseConcat();
+            if (c)
+                data.push_back(c);
             else {
                 goto _error;
             }
@@ -810,6 +840,7 @@ UnaryOp *Parser::parseUnary()
 
     var = Tok.getText();
     advance();
+
     if (Tok.getKind() == Token::plus_plus){
         Res = new UnaryOp(UnaryOp::Plus_plus, var);
     }
@@ -1097,6 +1128,7 @@ _error:
     return nullptr;
 }
 
+
 Logic *Parser::parseComparison()
 {
     Logic *Res = nullptr;
@@ -1360,7 +1392,9 @@ _error:
 
 PrintStmt *Parser::parsePrint()
 {
-    llvm::StringRef Var;
+    Expr* E = nullptr;
+    Logic* L = nullptr;
+
     if (expect(Token::KW_print)){
         goto _error;
     }
@@ -1369,25 +1403,83 @@ PrintStmt *Parser::parsePrint()
         goto _error;
     }
     advance();
-    if (expect(Token::ident)){
+
+    E = parseExpr();
+
+    if (!E){
         goto _error;
     }
-    Var = Tok.getText();
-    advance();
+
     if (expect(Token::r_paren)){
         goto _error;
     }
+
     advance();
+
     if (expect(Token::semicolon)){
         goto _error;
     }
-    return new PrintStmt(Var);
+
+    return new PrintStmt(E, nullptr, llvm::StringRef("x"));
 
 _error:
     while (Tok.getKind() != Token::eoi)
         advance();
     return nullptr;
+}
 
+ConcatStmt* Parser::parseConcat(){
+    llvm::StringRef First;
+    llvm::StringRef Second;
+    
+    if (expect(Token::KW_concat)){
+        goto _error;
+    }
+
+    advance();
+
+    if (expect(Token::l_paren)){
+        goto _error;
+    }
+
+    advance();
+    
+    if (!Tok.isOneOf(Token::ident, Token::string)){
+        goto _error;
+    }
+
+    First = Tok.getText();
+    advance();
+
+    if (expect(Token::comma)){
+        goto _error;
+    }
+
+    advance();
+
+    if (!Tok.isOneOf(Token::ident, Token::string)){
+        goto _error;
+    }
+
+    Second = Tok.getText();
+    advance();
+
+    if (expect(Token::r_paren)){
+        goto _error;
+    }
+
+    advance();
+
+    if (expect(Token::semicolon)){
+        goto _error;
+    }
+
+    return new ConcatStmt(First, Second);
+
+_error:
+    while (Tok.getKind() != Token::eoi)
+        advance();
+    return nullptr;
 }
 
 WhileStmt *Parser::parseWhile()
@@ -1531,6 +1623,143 @@ _error:
 
 }
 
+ForeachStmt* Parser::parseForeach(){
+    llvm::StringRef Left;
+    llvm::StringRef Right;
+    llvm::SmallVector<AST *> Body;
+    
+    if (expect(Token::KW_foreach)){
+        goto _error;
+    }
+
+    advance();
+
+    if (expect(Token::l_paren)){
+        goto _error;
+    }
+
+    advance();
+
+    if (expect(Token::ident)){
+        goto _error;
+    }
+
+    Left = Tok.getText();
+    advance();
+
+    if (expect(Token::KW_in)){
+        goto _error;
+    }
+
+    advance();
+
+    if (expect(Token::ident)){
+        goto _error;
+    }
+
+    Right = Tok.getText();
+    advance();
+
+    if (expect(Token::r_paren)){
+        goto _error;
+    }
+
+    advance();
+
+    if (expect(Token::l_brace)){
+        goto _error;
+    }
+
+    advance();
+
+    Body = getBody();
+
+    if (Body.empty())
+        goto _error; 
+
+    return new ForeachStmt(Left, Right, Body);   
+
+_error:
+    while (Tok.getKind() != Token::eoi)
+        advance();
+    return nullptr;   
+}
+
+
+TryCatchStmt* Parser::parseTryCatch(){
+    llvm::StringRef Error;
+    llvm::SmallVector<AST *> TryBody;
+    llvm::SmallVector<AST *> CatchBody;
+    
+    if (expect(Token::KW_try)){
+        goto _error;
+    }
+
+    advance();
+
+    if (expect(Token::l_brace)){
+        goto _error;
+    }
+
+    advance();
+
+    TryBody = getBody();
+    if (TryBody.empty())
+        goto _error;
+
+    advance(); 
+
+    if (expect(Token::KW_catch)){
+        goto _error;
+    }
+
+    advance();
+
+    if (expect(Token::l_paren)){
+        goto _error;
+    }
+
+    advance();
+
+    if (expect(Token::KW_error)){
+        goto _error;
+    }
+
+    advance();
+    
+
+    if (expect(Token::ident)){
+        goto _error;
+    }
+
+    Error = Tok.getText();
+    advance();
+
+    if (expect(Token::r_paren)){
+        goto _error;
+    }
+
+    advance();
+
+    if (expect(Token::l_brace)){
+        goto _error;
+    }
+
+    advance();
+
+    CatchBody = getBody();
+    if (CatchBody.empty())
+        goto _error; 
+
+    return new TryCatchStmt(Error, TryBody, CatchBody);     
+
+_error:
+    while (Tok.getKind() != Token::eoi)
+        advance();
+    return nullptr;
+}
+
+
 void Parser::parseComment()
 {
     if (expect(Token::start_comment)) {
@@ -1643,11 +1872,41 @@ llvm::SmallVector<AST *> Parser::getBody()
             }
             break;
         }
+        case Token::KW_foreach: {
+            ForeachStmt *fe;
+            fe = parseForeach();
+            if (fe)
+                body.push_back(fe);
+            else {
+                goto _error;
+            }
+            break;
+        }
+        case Token::KW_try: {
+            TryCatchStmt *tc;
+            tc = parseTryCatch();
+            if (tc)
+                body.push_back(tc);
+            else {
+                goto _error;
+            }
+            break;
+        }
         case Token::KW_print: {
             PrintStmt *p;
             p = parsePrint();
             if (p)
                 body.push_back(p);
+            else {
+                goto _error;
+            }
+            break;
+        }
+        case Token::KW_concat: {
+            ConcatStmt *c;
+            c = parseConcat();
+            if (c)
+                body.push_back(c);
             else {
                 goto _error;
             }
