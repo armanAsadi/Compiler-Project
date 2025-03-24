@@ -64,10 +64,12 @@ class Parser
     ForStmt *parseFor();
     ForeachStmt *parseForeach();
     TryCatchStmt *parseTryCatch();
+    MatchStmt *parseMatch();
+    PatternStmt *parsePattern();
     PrintStmt *parsePrint();
-    ConcatStmt *parseConcat();
+    Func *parseFunc(int argumentCount=1);
     void parseComment();
-    llvm::SmallVector<AST *> getBody();
+    llvm::SmallVector<AST *> getBody(bool patternBody=false);
 
 public:
     // initializes all members and retrieves the first token

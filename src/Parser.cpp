@@ -203,6 +203,16 @@ Program *Parser::parseProgram()
             }
             break;
         }
+        case Token::KW_match: {
+            MatchStmt *m;
+            m = parseMatch();
+            if (m)
+                data.push_back(m);
+            else {
+                goto _error;
+            }
+            break;
+        }
         case Token::KW_print: {
             PrintStmt *p;
             p = parsePrint();
@@ -214,10 +224,110 @@ Program *Parser::parseProgram()
             break;
         }
         case Token::KW_concat: {
-            ConcatStmt *c;
-            c = parseConcat();
-            if (c)
-                data.push_back(c);
+            Func *f;
+            f = parseFunc(2);
+            if (f)
+                data.push_back(f);
+            else {
+                goto _error;
+            }
+            break;
+        }
+        case Token::KW_pow: {
+            Func *f;
+            f = parseFunc(2);
+            if (f)
+                data.push_back(f);
+            else {
+                goto _error;
+            }
+            break;
+        }
+        case Token::KW_abs: {
+            Func *f;
+            f = parseFunc(1);
+            if (f)
+                data.push_back(f);
+            else {
+                goto _error;
+            }
+            break;
+        }
+        case Token::KW_length: {
+            Func *f;
+            f = parseFunc();
+            if (f)
+                data.push_back(f);
+            else {
+                goto _error;
+            }
+            break;
+        }
+        case Token::KW_min: {
+            Func *f;
+            f = parseFunc();
+            if (f)
+                data.push_back(f);
+            else {
+                goto _error;
+            }
+            break;
+        }
+        case Token::KW_max: {
+            Func *f;
+            f = parseFunc();
+            if (f)
+                data.push_back(f);
+            else {
+                goto _error;
+            }
+            break;
+        }
+        case Token::KW_index: {
+            Func *f;
+            f = parseFunc(2);
+            if (f)
+                data.push_back(f);
+            else {
+                goto _error;
+            }
+            break;
+        }
+        case Token::KW_add: {
+            Func *f;
+            f = parseFunc(2);
+            if (f)
+                data.push_back(f);
+            else {
+                goto _error;
+            }
+            break;
+        }
+        case Token::KW_subtract: {
+            Func *f;
+            f = parseFunc(2);
+            if (f)
+                data.push_back(f);
+            else {
+                goto _error;
+            }
+            break;
+        }
+        case Token::KW_multiply: {
+            Func *f;
+            f = parseFunc(2);
+            if (f)
+                data.push_back(f);
+            else {
+                goto _error;
+            }
+            break;
+        }
+        case Token::KW_divide: {
+            Func *f;
+            f = parseFunc(2);
+            if (f)
+                data.push_back(f);
             else {
                 goto _error;
             }
@@ -1428,11 +1538,58 @@ _error:
     return nullptr;
 }
 
-ConcatStmt* Parser::parseConcat(){
-    llvm::StringRef First;
-    llvm::StringRef Second;
+Func* Parser::parseFunc(int argumentCount){
+    Func::FuncType type;
+    Parameter *param1 = nullptr;
+    Parameter *param2 = nullptr;
+
+    switch (Tok.getKind())
+    {
+    case Token::KW_abs:
+        type = Func::Abs;
+        break;
+
+    case Token::KW_length:
+        type = Func::Length;
+        break;
+
+    case Token::KW_min:
+        type = Func::Min;
+        break;
+
+    case Token::KW_max:
+        type = Func::Max;
+        break;
+
+    case Token::KW_concat:
+        type = Func::Concat;
+        break;
     
-    if (expect(Token::KW_concat)){
+    case Token::KW_pow:
+        type = Func::Pow;
+        break;
+
+    case Token::KW_index:
+        type = Func::Index;
+        break;
+
+    case Token::KW_add:
+        type = Func::Add;
+        break;
+
+    case Token::KW_subtract:
+        type = Func::Subtract;
+        break;
+
+    case Token::KW_multiply:
+        type = Func::Multiply;
+        break;
+
+    case Token::KW_divide:
+        type = Func::Divide;
+        break;
+    
+    default:
         goto _error;
     }
 
@@ -1443,26 +1600,127 @@ ConcatStmt* Parser::parseConcat(){
     }
 
     advance();
+
+    switch (Tok.getKind())
+    {
+    case Token::ident:
+        param1 = new Parameter(Parameter::Ident, Tok.getText());
+        break;
+
+    case Token::number:
+        param1 = new Parameter(Parameter::Int, Tok.getText(), Parameter::Plus);
+        break;
+
+    case Token::floating:
+        param1 = new Parameter(Parameter::Float, Tok.getText(), Parameter::Plus);
+        break;
+
+    case Token::string:
+        param1 = new Parameter(Parameter::String, Tok.getText());
+        break;
+
+    case Token::plus: {
+        
+        advance();
+        if (Tok.is(Token::number)){
+            param1 = new Parameter(Parameter::Int, Tok.getText(), Parameter::Plus);
+            break;
+        }
+        else if (Tok.is(Token::floating)){
+            param1 = new Parameter(Parameter::Float, Tok.getText(), Parameter::Plus);
+            break;
+        }
+
+        goto _error;
+
+    }
+
+    case Token::minus: {
+        
+        advance();
+        if (Tok.is(Token::number)){
+            param1 = new Parameter(Parameter::Int, Tok.getText(), Parameter::Minus);
+            break;
+        }
+        else if (Tok.is(Token::floating)){
+            param1 = new Parameter(Parameter::Float, Tok.getText(), Parameter::Minus);
+            break;
+        }
+
+        goto _error;
+
+    }
     
-    if (!Tok.isOneOf(Token::ident, Token::string)){
-        goto _error;
-    }
-
-    First = Tok.getText();
-    advance();
-
-    if (expect(Token::comma)){
+    default:
         goto _error;
     }
 
     advance();
 
-    if (!Tok.isOneOf(Token::ident, Token::string)){
-        goto _error;
-    }
+    if (argumentCount == 2){
 
-    Second = Tok.getText();
-    advance();
+        if (expect(Token::comma)){
+            goto _error;
+        }
+
+        advance();
+
+        switch (Tok.getKind())
+        {
+        case Token::ident:
+            param2 = new Parameter(Parameter::Ident, Tok.getText());
+            break;
+
+        case Token::number:
+            param2 = new Parameter(Parameter::Int, Tok.getText(), Parameter::Plus);
+            break;
+
+        case Token::floating:
+            param2 = new Parameter(Parameter::Float, Tok.getText(), Parameter::Plus);
+            break;
+
+        case Token::string:
+            param2 = new Parameter(Parameter::String, Tok.getText());
+            break;
+
+        case Token::plus: {
+        
+            advance();
+            if (Tok.is(Token::number)){
+                param2 = new Parameter(Parameter::Int, Tok.getText(), Parameter::Plus);
+                break;
+            }
+            else if (Tok.is(Token::floating)){
+                param2 = new Parameter(Parameter::Float, Tok.getText(), Parameter::Plus);
+                break;
+            }
+
+            goto _error;
+
+        }
+
+        case Token::minus: {
+        
+            advance();
+            if (Tok.is(Token::number)){
+                param2 = new Parameter(Parameter::Int, Tok.getText(), Parameter::Minus);
+                break;
+            }
+            else if (Tok.is(Token::floating)){
+                param2 = new Parameter(Parameter::Float, Tok.getText(), Parameter::Minus);
+                break;
+            }
+
+            goto _error;
+
+        }
+        
+        default:
+            goto _error;
+        }
+
+        advance();
+    }
 
     if (expect(Token::r_paren)){
         goto _error;
@@ -1474,7 +1732,7 @@ ConcatStmt* Parser::parseConcat(){
         goto _error;
     }
 
-    return new ConcatStmt(First, Second);
+    return new Func(type, param1, param2);
 
 _error:
     while (Tok.getKind() != Token::eoi)
@@ -1759,6 +2017,105 @@ _error:
     return nullptr;
 }
 
+MatchStmt* Parser::parseMatch(){
+  llvm::StringRef Ident;
+  llvm::SmallVector<PatternStmt *> Patterns;
+
+  if (expect(Token::KW_match)){
+    goto _error;
+  }
+
+  advance();
+
+  if (expect(Token::ident)){
+    goto _error;
+  }
+
+  Ident = Tok.getText();
+  advance();
+
+  if (expect(Token::l_brace)){
+    goto _error;
+  }
+
+  do
+  {
+
+    advance();
+    if (Tok.is(Token::r_brace))
+        break;
+    
+    PatternStmt *P = nullptr;
+    P = parsePattern();
+    
+    if(P){
+        Patterns.push_back(P);
+    }
+    else{
+        goto _error;
+    }
+    
+  } while(Tok.is(Token::comma));
+
+  return new MatchStmt(Ident, Patterns);
+
+_error:
+    while (Tok.getKind() != Token::eoi)
+        advance();
+    return nullptr;    
+}
+
+PatternStmt* Parser::parsePattern(){
+    llvm::StringRef Value;
+    PatternStmt::DataType ValueType;
+    llvm::SmallVector<AST *> Body;
+    
+    switch (Tok.getKind())
+    {
+    case Token::number:
+        ValueType = PatternStmt::Int;
+        break;
+
+    case Token::floating:
+        ValueType = PatternStmt::Float;
+        break;
+
+    case Token::character:
+        ValueType = PatternStmt::Char;
+        break;
+
+    case Token::string:
+        ValueType = PatternStmt::String;
+        break;
+
+    case Token::underscore:
+        ValueType = PatternStmt::Default;
+        break;
+    
+    default:
+        goto _error;
+    }
+
+    Value = Tok.getText();
+    advance();
+
+    if (expect(Token::arrow)){
+        goto _error;
+    }
+
+    advance();
+
+    Body = getBody(true);
+    if (Body.empty())
+        goto _error; 
+
+    return new PatternStmt(Value, ValueType, Body);
+
+_error:
+    while (Tok.getKind() != Token::eoi)
+        advance();
+    return nullptr;
+}
 
 void Parser::parseComment()
 {
@@ -1775,10 +2132,11 @@ _error:
         advance();
 }
 
-llvm::SmallVector<AST *> Parser::getBody()
+llvm::SmallVector<AST *> Parser::getBody(bool patternBody)
 {
     llvm::SmallVector<AST *> body;
-    while (!Tok.is(Token::r_brace))
+    Token::TokenKind endToken = patternBody ? Token::comma : Token::r_brace;
+    while (!Tok.is(endToken))
     {
         switch (Tok.getKind())
         {
@@ -1892,6 +2250,16 @@ llvm::SmallVector<AST *> Parser::getBody()
             }
             break;
         }
+        case Token::KW_match: {
+            MatchStmt *m;
+            m = parseMatch();
+            if (m)
+                body.push_back(m);
+            else {
+                goto _error;
+            }
+            break;
+        }
         case Token::KW_print: {
             PrintStmt *p;
             p = parsePrint();
@@ -1903,10 +2271,110 @@ llvm::SmallVector<AST *> Parser::getBody()
             break;
         }
         case Token::KW_concat: {
-            ConcatStmt *c;
-            c = parseConcat();
-            if (c)
-                body.push_back(c);
+            Func *f;
+            f = parseFunc(2);
+            if (f)
+                body.push_back(f);
+            else {
+                goto _error;
+            }
+            break;
+        }
+        case Token::KW_pow: {
+            Func *f;
+            f = parseFunc(2);
+            if (f)
+                body.push_back(f);
+            else {
+                goto _error;
+            }
+            break;
+        }
+        case Token::KW_abs: {
+            Func *f;
+            f = parseFunc(1);
+            if (f)
+                body.push_back(f);
+            else {
+                goto _error;
+            }
+            break;
+        }
+        case Token::KW_length: {
+            Func *f;
+            f = parseFunc();
+            if (f)
+                body.push_back(f);
+            else {
+                goto _error;
+            }
+            break;
+        }
+        case Token::KW_min: {
+            Func *f;
+            f = parseFunc();
+            if (f)
+                body.push_back(f);
+            else {
+                goto _error;
+            }
+            break;
+        }
+        case Token::KW_max: {
+            Func *f;
+            f = parseFunc();
+            if (f)
+                body.push_back(f);
+            else {
+                goto _error;
+            }
+            break;
+        }
+        case Token::KW_index: {
+            Func *f;
+            f = parseFunc(2);
+            if (f)
+                body.push_back(f);
+            else {
+                goto _error;
+            }
+            break;
+        }
+        case Token::KW_add: {
+            Func *f;
+            f = parseFunc(2);
+            if (f)
+                body.push_back(f);
+            else {
+                goto _error;
+            }
+            break;
+        }
+        case Token::KW_subtract: {
+            Func *f;
+            f = parseFunc(2);
+            if (f)
+                body.push_back(f);
+            else {
+                goto _error;
+            }
+            break;
+        }
+        case Token::KW_multiply: {
+            Func *f;
+            f = parseFunc(2);
+            if (f)
+                body.push_back(f);
+            else {
+                goto _error;
+            }
+            break;
+        }
+        case Token::KW_divide: {
+            Func *f;
+            f = parseFunc(2);
+            if (f)
+                body.push_back(f);
             else {
                 goto _error;
             }
@@ -1929,7 +2397,7 @@ llvm::SmallVector<AST *> Parser::getBody()
         advance();
 
     }
-    if(Tok.is(Token::r_brace)){
+    if(Tok.is(endToken)){
         return body;
     }
 

@@ -31,8 +31,11 @@ class elifStmt;
 class ForStmt;
 class ForeachStmt;
 class TryCatchStmt;
+class MatchStmt;
+class PatternStmt;
 class PrintStmt;
-class ConcatStmt;
+class Func;
+class Parameter;
 
 // ASTVisitor class defines a visitor pattern to traverse the AST
 class ASTVisitor
@@ -724,6 +727,59 @@ public:
   } 
 };
 
+class MatchStmt : public Program
+{
+private:
+  llvm::StringRef Ident;
+  llvm::SmallVector<PatternStmt *> Patterns;
+
+public:
+  MatchStmt(llvm::StringRef I, llvm::SmallVector<PatternStmt *> P) : Ident(I), Patterns(P) {}
+
+  llvm::StringRef getIdent() { return Ident; }
+
+  llvm::SmallVector<PatternStmt *> getPatterns() { return Patterns; }
+
+  virtual void accept(ASTVisitor &V) override
+  {
+    V.visit(*this);
+  }
+};
+
+
+class PatternStmt : public Program
+{
+  public:
+  enum DataType{
+    Int,
+    Float,
+    Char,
+    String,
+    Default
+  };
+  
+  using BodyVector = llvm::SmallVector<AST *>;
+  BodyVector Body;
+
+private:
+  DataType ValueType;
+  llvm::StringRef Value;
+
+public:
+  PatternStmt(llvm::StringRef Value, DataType ValueType, BodyVector Body) : Value(Value), ValueType(ValueType), Body(Body) {}
+
+  llvm::StringRef getValue() { return Value; }
+
+  DataType getValueType() { return ValueType; }
+
+  BodyVector getBody() { return Body; }
+
+  virtual void accept(ASTVisitor &V) override
+  {
+    V.visit(*this);
+  }
+};
+
 
 class PrintStmt : public Program
 {
@@ -747,18 +803,72 @@ public:
   }
 };
 
-class ConcatStmt : public Program
+class Func : public Program
 {
+  public:
+  enum FuncType{
+    Concat,
+    Pow,
+    Abs,
+    Length,
+    Min,
+    Max,
+    Index,
+    Add,
+    Subtract,
+    Multiply,
+    Divide
+  };
+
 private:
-  llvm::StringRef First;
-  llvm::StringRef Second;
+  FuncType type;
+  Parameter *param1;
+  Parameter *param2;
+
+public:
+  Func(FuncType type, Parameter *param1, Parameter *param2) : type(type), param1(param1), param2(param2) {}
+
+  FuncType getType() { return type; }
+
+  Parameter* getParam1() { return param1; }
+
+  Parameter* getParam2() { return param2; }
+
+  virtual void accept(ASTVisitor &V) override
+  {
+    V.visit(*this);
+  }
+};
+
+class Parameter : public Program
+{
+  public:
+  enum ParamType{
+    Ident,
+    Int,
+    Float,
+    String
+  };
+
+  enum ParamSign{
+    Plus,
+    Minus,
+    None
+  };
+
+private:
+  ParamSign sign;
+  ParamType type;
+  llvm::StringRef value;
   
 public:
-  ConcatStmt(llvm::StringRef First, llvm::StringRef Second) : First(First), Second(Second) {}
+  Parameter(ParamType type, llvm::StringRef value, ParamSign sign=ParamSign::None) : type(type), value(value), sign(sign) {}
 
-  llvm::StringRef getFirst() { return First; }
+  ParamType getType() { return type; }
 
-  llvm::StringRef getSecond() { return Second; }
+  llvm::StringRef getValue() { return value; }
+
+  ParamSign getSign() { return sign; }
 
   virtual void accept(ASTVisitor &V) override
   {

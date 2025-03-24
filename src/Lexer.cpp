@@ -207,10 +207,10 @@ void Lexer::next(Token &token) {
             kind = Token::arrow;
             isFound = true;
             end = endWithTwoLetter;
-        } else if (NameWithTwoLetter == "_"){
+        } else if (NameWithOneLetter == "_"){
             kind = Token::underscore;
             isFound = true;
-            end = endWithTwoLetter;
+            end = endWithOneLetter;
         } else if (NameWithOneLetter == "+"){
             kind = Token::plus;
             isFound = true;
