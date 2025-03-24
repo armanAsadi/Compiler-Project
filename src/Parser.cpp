@@ -2054,8 +2054,13 @@ MatchStmt* Parser::parseMatch(){
     else{
         goto _error;
     }
+
+    if (Tok.is(Token::r_brace))
+        break;
+    if (expect(Token::comma))
+        goto _error;
     
-  } while(Tok.is(Token::comma));
+  } while(true);
 
   return new MatchStmt(Ident, Patterns);
 
@@ -2068,7 +2073,7 @@ _error:
 PatternStmt* Parser::parsePattern(){
     llvm::StringRef Value;
     PatternStmt::DataType ValueType;
-    llvm::SmallVector<AST *> Body;
+    AST *stmt;
     
     switch (Tok.getKind())
     {
@@ -2105,11 +2110,11 @@ PatternStmt* Parser::parsePattern(){
 
     advance();
 
-    Body = getBody(true);
-    if (Body.empty())
+    stmt = parseStmt();
+    if (!stmt)
         goto _error; 
 
-    return new PatternStmt(Value, ValueType, Body);
+    return new PatternStmt(Value, ValueType, stmt);
 
 _error:
     while (Tok.getKind() != Token::eoi)
@@ -2135,8 +2140,7 @@ _error:
 llvm::SmallVector<AST *> Parser::getBody(bool patternBody)
 {
     llvm::SmallVector<AST *> body;
-    Token::TokenKind endToken = patternBody ? Token::comma : Token::r_brace;
-    while (!Tok.is(endToken))
+    while (!Tok.is(Token::r_brace))
     {
         switch (Tok.getKind())
         {
@@ -2397,7 +2401,7 @@ llvm::SmallVector<AST *> Parser::getBody(bool patternBody)
         advance();
 
     }
-    if(Tok.is(endToken)){
+    if(Tok.is(Token::r_brace)){
         return body;
     }
 
@@ -2406,4 +2410,274 @@ _error:
         advance();
     return body;
 
+}
+
+AST* Parser::parseStmt(){
+    AST *S = nullptr;
+
+    switch (Tok.getKind())
+    {
+        
+    case Token::ident:{
+        Token prev_token = Tok;
+        const char* prev_buffer = Lex.getBuffer();
+        UnaryOp *u;
+        u = parseUnary();
+        if (Tok.is(Token::semicolon))
+        {
+            if (u)
+            {
+                S = u;
+                break;
+            }
+            else{
+
+                goto _error;
+            }
+                
+        }
+        else
+        {
+            if (u)
+            {
+
+                goto _error;
+            }
+            else{
+                Tok = prev_token;
+                Lex.setBufferPtr(prev_buffer);
+            }
+                
+        }
+
+        
+        Assignment *a_int;
+        Assignment *a_bool;
+        prev_token = Tok;
+        prev_buffer = Lex.getBuffer();
+
+        a_bool = parseBoolAssign();
+
+        if (a_bool){
+            S = a_bool;
+            break;
+        }
+        Tok = prev_token;
+        Lex.setBufferPtr(prev_buffer);
+
+        a_int = parseIntAssign();
+        if (a_int)
+            S = a_int;
+        else
+            goto _error;
+        if (!Tok.is(Token::semicolon))
+        {
+            goto _error;
+        }
+
+        break;
+    }
+    case Token::KW_if: {
+        IfStmt *i;
+        i = parseIf();
+        if (i)
+            S = i;
+        else
+            goto _error;
+        
+        break;
+    }
+    case Token::KW_while:{
+        WhileStmt *w;
+        w = parseWhile();
+        if (w)
+            S = w;
+        else {
+            goto _error;
+        }
+        break;
+    }
+    case Token::KW_for:{
+        ForStmt *f;
+        f = parseFor();
+        if (f)
+            S = f;
+        else {
+            goto _error;
+        }
+        break;
+    }
+    case Token::KW_foreach: {
+        ForeachStmt *fe;
+        fe = parseForeach();
+        if (fe)
+            S = fe;
+        else {
+            goto _error;
+        }
+        break;
+    }
+    case Token::KW_try: {
+        TryCatchStmt *tc;
+        tc = parseTryCatch();
+        if (tc)
+            S = tc;
+        else {
+            goto _error;
+        }
+        break;
+    }
+    case Token::KW_match: {
+        MatchStmt *m;
+        m = parseMatch();
+        if (m)
+            S = m;
+        else {
+            goto _error;
+        }
+        break;
+    }
+    case Token::KW_print: {
+        PrintStmt *p;
+        p = parsePrint();
+        if (p)
+            S = p;
+        else {
+            goto _error;
+        }
+        break;
+    }
+    case Token::KW_concat: {
+        Func *f;
+        f = parseFunc(2);
+        if (f)
+            S = f;
+        else {
+            goto _error;
+        }
+        break;
+    }
+    case Token::KW_pow: {
+        Func *f;
+        f = parseFunc(2);
+        if (f)
+            S = f;
+        else {
+            goto _error;
+        }
+        break;
+    }
+    case Token::KW_abs: {
+        Func *f;
+        f = parseFunc(1);
+        if (f)
+            S = f;
+        else {
+            goto _error;
+        }
+        break;
+    }
+    case Token::KW_length: {
+        Func *f;
+        f = parseFunc();
+        if (f)
+            S = f;
+        else {
+            goto _error;
+        }
+        break;
+    }
+    case Token::KW_min: {
+        Func *f;
+        f = parseFunc();
+        if (f)
+            S = f;
+        else {
+            goto _error;
+        }
+        break;
+    }
+    case Token::KW_max: {
+        Func *f;
+        f = parseFunc();
+        if (f)
+            S = f;
+        else {
+            goto _error;
+        }
+        break;
+    }
+    case Token::KW_index: {
+        Func *f;
+        f = parseFunc(2);
+        if (f)
+            S = f;
+        else {
+            goto _error;
+        }
+        break;
+    }
+    case Token::KW_add: {
+        Func *f;
+        f = parseFunc(2);
+        if (f)
+            S = f;
+        else {
+            goto _error;
+        }
+        break;
+    }
+    case Token::KW_subtract: {
+        Func *f;
+        f = parseFunc(2);
+        if (f)
+            S = f;
+        else {
+            goto _error;
+        }
+        break;
+    }
+    case Token::KW_multiply: {
+        Func *f;
+        f = parseFunc(2);
+        if (f)
+            S = f;
+        else {
+            goto _error;
+        }
+        break;
+    }
+    case Token::KW_divide: {
+        Func *f;
+        f = parseFunc(2);
+        if (f)
+            S = f;
+        else {
+            goto _error;
+        }
+        break;
+    }
+    case Token::start_comment: {
+        parseComment();
+        if (!Tok.is(Token::end_comment))
+            goto _error;
+        break;
+    }
+    default:{
+        llvm::errs() << "error7\n";
+        error();
+
+        goto _error;
+        break;
+    }
+    }
+
+    advance();
+
+    return S;
+
+_error:
+    while (Tok.getKind() != Token::eoi)
+        advance();
+    return nullptr;
 }

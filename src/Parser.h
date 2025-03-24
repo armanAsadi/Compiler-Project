@@ -67,6 +67,7 @@ class Parser
     MatchStmt *parseMatch();
     PatternStmt *parsePattern();
     PrintStmt *parsePrint();
+    AST *parseStmt();
     Func *parseFunc(int argumentCount=1);
     void parseComment();
     llvm::SmallVector<AST *> getBody(bool patternBody=false);

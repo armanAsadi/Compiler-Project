@@ -757,22 +757,20 @@ class PatternStmt : public Program
     String,
     Default
   };
-  
-  using BodyVector = llvm::SmallVector<AST *>;
-  BodyVector Body;
 
 private:
   DataType ValueType;
   llvm::StringRef Value;
+  AST *stmt;
 
 public:
-  PatternStmt(llvm::StringRef Value, DataType ValueType, BodyVector Body) : Value(Value), ValueType(ValueType), Body(Body) {}
+  PatternStmt(llvm::StringRef Value, DataType ValueType, AST *stmt=nullptr) : Value(Value), ValueType(ValueType), stmt(stmt) {}
 
   llvm::StringRef getValue() { return Value; }
 
   DataType getValueType() { return ValueType; }
 
-  BodyVector getBody() { return Body; }
+  AST* getStmt() { return stmt; }
 
   virtual void accept(ASTVisitor &V) override
   {
