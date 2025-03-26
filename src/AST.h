@@ -16,7 +16,9 @@ class DeclarationString;
 class DeclarationArray;
 class Array;
 class ArrayElement;
+class ArrayCalculation;
 class Final;
+class TernaryOp;
 class BinaryOp;
 class UnaryOp;
 class SignedNumber;
@@ -280,15 +282,18 @@ private:
   using ValueVector = llvm::SmallVector<llvm::StringRef>;
   ValueVector Values;
   DataType Type;
+  ArrayCalculation *arrayCalc;
 
 public:
-  Array(DataType Type, llvm::SmallVector<llvm::StringRef> Values) : Type(Type), Values(Values) {}
+  Array(DataType Type, llvm::SmallVector<llvm::StringRef> Values, ArrayCalculation *arrayCalc) : Type(Type), Values(Values), arrayCalc(arrayCalc) {}
 
   DataType getType() { return Type; }
   
   ValueVector::const_iterator valBegin() { return Values.begin(); }
 
   ValueVector::const_iterator valEnd() { return Values.end(); }
+
+  ArrayCalculation *getarrayCalc() { return arrayCalc; }
 
   virtual void accept(ASTVisitor &V) override
   {
@@ -314,6 +319,54 @@ public:
     V.visit(*this);
   }
 };
+
+class ArrayCalculation : public AST
+{
+  public:
+  enum NumType{
+    Int,
+    Float
+  };
+
+  enum NumSign{
+    Pos,
+    Neg
+  };
+
+  enum Operator{
+    Plus,
+    Minus,
+    Mul,
+    Div
+  };
+
+
+private:
+  llvm::StringRef ident;
+  llvm::StringRef number;
+  NumType numberType;
+  NumSign numberSign;
+  Operator op;
+
+public:
+  ArrayCalculation(llvm::StringRef ident, llvm::StringRef number, NumType numberType, NumSign numberSign, Operator op) : ident(ident), number(number), numberType(numberType), numberSign(numberSign), op(op) {}
+
+  llvm::StringRef getIdent() { return ident; }
+
+  llvm::StringRef getNumber() { return number; }
+
+  NumType getNumberType() { return numberType; }
+
+  NumSign getNumberSign() { return numberSign; }
+
+  Operator getOp() { return op; }
+
+  virtual void accept(ASTVisitor &V) override
+  {
+    V.visit(*this);
+  }
+};
+
 
 
 // Final class represents a Final in the AST (either an identifier or a number or true or false)
@@ -344,6 +397,41 @@ public:
     V.visit(*this);
   }
 };
+
+class TernaryOp : public AST
+{
+private:
+  Logic *Cond;
+  Expr *LeftExpr;
+  Expr *RightExpr;
+  llvm::StringRef LeftChar;
+  llvm::StringRef RightChar;
+  llvm::StringRef LeftString;
+  llvm::StringRef RightString;
+  
+public:
+  TernaryOp(Logic *Cond, Expr *LeftExpr, Expr *RightExpr, llvm::StringRef LeftChar, llvm::StringRef RightChar, llvm::StringRef LeftString, llvm::StringRef RightString) : Cond(Cond), LeftExpr(LeftExpr), RightExpr(RightExpr), LeftChar(LeftChar), RightChar(RightChar), LeftString(LeftString), RightString(RightString) {} 
+
+  Logic *getCond() { return Cond; }
+
+  Expr *getLeftExpr() { return LeftExpr; }
+
+  Expr *getRightExpr() { return RightExpr; }
+
+  llvm::StringRef getLeftChar() { return LeftChar; }
+
+  llvm::StringRef getRightChar() { return RightChar; }
+
+  llvm::StringRef getLeftString() { return LeftString; }
+
+  llvm::StringRef getRightString() { return RightString; }
+
+  virtual void accept(ASTVisitor &V) override
+  {
+    V.visit(*this);
+  }
+};
+
 
 // BinaryOp class represents a binary operation in the AST (plus, minus, multiplication, division)
 class BinaryOp : public Expr
@@ -496,11 +584,12 @@ private:
   Logic *RightLogicExpr;                  // Right-hand side logical expression
   llvm::StringRef RightChar;              // Right-hand side char literal
   llvm::StringRef RightString;            // Right-hand side string literal
-  Array *RightArray;            // Right-hand side array literal
+  Array *RightArray;                      // Right-hand side array literal
+  TernaryOp *ternaryOp;                   // Right-hand side ternary operation
   AssignKind AK;                          // Kind of assignment
 
 public:
-  Assignment(Final *L, Expr *RE, AssignKind AK, Logic *RL, llvm::StringRef RC, llvm::StringRef RS, Array *RA) : Left(L), RightExpr(RE), AK(AK), RightLogicExpr(RL), RightChar(RC), RightString(RS), RightArray(RA) {}
+  Assignment(Final *L, Expr *RE, AssignKind AK, Logic *RL, llvm::StringRef RC, llvm::StringRef RS, Array *RA, TernaryOp *ternaryOp) : Left(L), RightExpr(RE), AK(AK), RightLogicExpr(RL), RightChar(RC), RightString(RS), RightArray(RA), ternaryOp(ternaryOp) {}
 
   Final *getLeft() { return Left; }
 
@@ -512,7 +601,9 @@ public:
 
   llvm::StringRef getRightString() { return RightString; }
 
-  Array* getRightArray() { return RightArray; }
+  Array *getRightArray() { return RightArray; }
+
+  TernaryOp *getTernaryOp() { return ternaryOp; }
 
   AssignKind getAssignKind() { return AK; }
 

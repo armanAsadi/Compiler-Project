@@ -53,6 +53,7 @@ class Parser
     Assignment *parseStringAssign();
     Assignment *parseArrayAssign();
     UnaryOp *parseUnary();
+    TernaryOp *parseTernary();
     Expr *parseExpr();
     Expr *parseTerm();
     Expr *parseFinal();
@@ -60,6 +61,7 @@ class Parser
     Logic *parseLogic();
     Logic *parseComparison();
     Array *parseArray();
+    ArrayCalculation *parseArrayCalc();
     IfStmt *parseIf();
     WhileStmt *parseWhile();
     ForStmt *parseFor();
