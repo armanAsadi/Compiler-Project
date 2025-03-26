@@ -109,6 +109,7 @@ Program *Parser::parseProgram()
             Assignment *a_bool;
             Assignment *a_char;
             Assignment *a_string;
+            Assignment *a_array;
             prev_token = Tok;
             prev_buffer = Lex.getBuffer();
 
@@ -126,6 +127,16 @@ Program *Parser::parseProgram()
 
             if (a_string){
                 data.push_back(a_string);
+                break;
+            }
+
+            Tok = prev_token;
+            Lex.setBufferPtr(prev_buffer);
+
+            a_array = parseArrayAssign();
+            
+            if (a_array){
+                data.push_back(a_array);
                 break;
             }
 
@@ -225,8 +236,8 @@ Program *Parser::parseProgram()
         }
         case Token::KW_concat: {
             Func *f;
-            f = parseFunc(2);
-            if (f)
+            f = parseFunc();
+            if (f && Tok.getKind() == Token::semicolon)
                 data.push_back(f);
             else {
                 goto _error;
@@ -235,8 +246,8 @@ Program *Parser::parseProgram()
         }
         case Token::KW_pow: {
             Func *f;
-            f = parseFunc(2);
-            if (f)
+            f = parseFunc();
+            if (f && Tok.getKind() == Token::semicolon)
                 data.push_back(f);
             else {
                 goto _error;
@@ -245,8 +256,8 @@ Program *Parser::parseProgram()
         }
         case Token::KW_abs: {
             Func *f;
-            f = parseFunc(1);
-            if (f)
+            f = parseFunc();
+            if (f && Tok.getKind() == Token::semicolon)
                 data.push_back(f);
             else {
                 goto _error;
@@ -256,7 +267,7 @@ Program *Parser::parseProgram()
         case Token::KW_length: {
             Func *f;
             f = parseFunc();
-            if (f)
+            if (f && Tok.getKind() == Token::semicolon)
                 data.push_back(f);
             else {
                 goto _error;
@@ -266,7 +277,7 @@ Program *Parser::parseProgram()
         case Token::KW_min: {
             Func *f;
             f = parseFunc();
-            if (f)
+            if (f && Tok.getKind() == Token::semicolon)
                 data.push_back(f);
             else {
                 goto _error;
@@ -276,7 +287,7 @@ Program *Parser::parseProgram()
         case Token::KW_max: {
             Func *f;
             f = parseFunc();
-            if (f)
+            if (f && Tok.getKind() == Token::semicolon)
                 data.push_back(f);
             else {
                 goto _error;
@@ -285,8 +296,8 @@ Program *Parser::parseProgram()
         }
         case Token::KW_index: {
             Func *f;
-            f = parseFunc(2);
-            if (f)
+            f = parseFunc();
+            if (f && Tok.getKind() == Token::semicolon)
                 data.push_back(f);
             else {
                 goto _error;
@@ -295,8 +306,8 @@ Program *Parser::parseProgram()
         }
         case Token::KW_add: {
             Func *f;
-            f = parseFunc(2);
-            if (f)
+            f = parseFunc();
+            if (f && Tok.getKind() == Token::semicolon)
                 data.push_back(f);
             else {
                 goto _error;
@@ -305,8 +316,8 @@ Program *Parser::parseProgram()
         }
         case Token::KW_subtract: {
             Func *f;
-            f = parseFunc(2);
-            if (f)
+            f = parseFunc();
+            if (f && Tok.getKind() == Token::semicolon)
                 data.push_back(f);
             else {
                 goto _error;
@@ -315,8 +326,8 @@ Program *Parser::parseProgram()
         }
         case Token::KW_multiply: {
             Func *f;
-            f = parseFunc(2);
-            if (f)
+            f = parseFunc();
+            if (f && Tok.getKind() == Token::semicolon)
                 data.push_back(f);
             else {
                 goto _error;
@@ -325,8 +336,8 @@ Program *Parser::parseProgram()
         }
         case Token::KW_divide: {
             Func *f;
-            f = parseFunc(2);
-            if (f)
+            f = parseFunc();
+            if (f && Tok.getKind() == Token::semicolon)
                 data.push_back(f);
             else {
                 goto _error;
@@ -807,7 +818,7 @@ Assignment *Parser::parseBoolAssign()
             {
                 goto _error;
             }
-            return new Assignment(F, nullptr, AK, L, llvm::StringRef(), llvm::StringRef());
+            return new Assignment(F, nullptr, AK, L, llvm::StringRef(), llvm::StringRef(), nullptr);
         }
         else
             goto _error;
@@ -862,7 +873,7 @@ Assignment *Parser::parseIntAssign()
     advance();
     E = parseExpr();    // check for mathematical expr
     if(E){
-        return new Assignment(F, E, AK, nullptr, llvm::StringRef(), llvm::StringRef());
+        return new Assignment(F, E, AK, nullptr, llvm::StringRef(), llvm::StringRef(), nullptr);
     }
     else{
         goto _error;
@@ -898,7 +909,7 @@ Assignment *Parser::parseCharAssign(){
         goto _error;
     }
 
-    return new Assignment(F, nullptr, Assignment::Assign, nullptr, value, llvm::StringRef());
+    return new Assignment(F, nullptr, Assignment::Assign, nullptr, value, llvm::StringRef(), nullptr);
 
 _error:
     while (Tok.getKind() != Token::eoi)
@@ -930,7 +941,7 @@ Assignment *Parser::parseStringAssign(){
         goto _error;
     }
 
-    return new Assignment(F, nullptr, Assignment::Assign, nullptr, llvm::StringRef(), value);
+    return new Assignment(F, nullptr, Assignment::Assign, nullptr, llvm::StringRef(), value, nullptr);
 
 _error:
     while (Tok.getKind() != Token::eoi)
@@ -938,10 +949,42 @@ _error:
     return nullptr;    
 }
 
+Assignment* Parser::parseArrayAssign(){
+    Final *F = nullptr;
+    Array *A = nullptr;
+    F = (Final *)(parseFinal());
+
+    if (F == nullptr){
+        goto _error;
+    }
+
+    if (expect(Token::assign)){
+        goto _error;
+    }
+    advance();
+
+    A = parseArray();
+    if (A == nullptr){
+        goto _error;
+    }
+
+    if (expect(Token::semicolon)){
+        goto _error;
+    }
+
+    return new Assignment(F, nullptr, Assignment::Assign, nullptr, llvm::StringRef(), llvm::StringRef(), A);
+
+_error:
+    while (Tok.getKind() != Token::eoi)
+        advance();
+    return nullptr;
+}
+
 
 UnaryOp *Parser::parseUnary()
 {
     UnaryOp* Res = nullptr;
+    ArrayElement* AE = nullptr;
     llvm::StringRef var;
 
     if (expect(Token::ident)){
@@ -951,11 +994,28 @@ UnaryOp *Parser::parseUnary()
     var = Tok.getText();
     advance();
 
+    if (Tok.getKind() == Token::l_bracket){
+        advance();
+        if (Tok.isOneOf(Token::ident, Token::number)){
+            AE = new ArrayElement(var, Tok.getText());
+        }
+        else{
+            goto _error;
+        }
+
+        advance();
+        if (expect(Token::r_bracket)){
+            goto _error;
+        }
+
+        advance();
+    }
+
     if (Tok.getKind() == Token::plus_plus){
-        Res = new UnaryOp(UnaryOp::Plus_plus, var);
+        Res = new UnaryOp(UnaryOp::Plus_plus, var, AE);
     }
     else if(Tok.getKind() == Token::minus_minus){
-        Res = new UnaryOp(UnaryOp::Minus_minus, var);
+        Res = new UnaryOp(UnaryOp::Minus_minus, var, AE);
     }
     else{
         goto _error;
@@ -1504,6 +1564,9 @@ PrintStmt *Parser::parsePrint()
 {
     Expr* E = nullptr;
     Logic* L = nullptr;
+    Func* F = nullptr;
+    Token prev_token;
+    const char* prev_buffer;
 
     if (expect(Token::KW_print)){
         goto _error;
@@ -1514,10 +1577,27 @@ PrintStmt *Parser::parsePrint()
     }
     advance();
 
-    E = parseExpr();
+    prev_token = Tok;
+    prev_buffer = Lex.getBuffer();
 
-    if (!E){
-        goto _error;
+    F = parseFunc();
+ 
+    if (F == nullptr){
+        Tok = prev_token;
+        Lex.setBufferPtr(prev_buffer);
+
+        L = parseLogic();
+
+        if (L == nullptr || expect(Token::r_paren)){
+            Tok = prev_token;
+            Lex.setBufferPtr(prev_buffer);
+
+            E = parseExpr();
+
+            if (E == nullptr){
+                goto _error;
+            }
+        }
     }
 
     if (expect(Token::r_paren)){
@@ -1530,7 +1610,7 @@ PrintStmt *Parser::parsePrint()
         goto _error;
     }
 
-    return new PrintStmt(E, nullptr, llvm::StringRef("x"));
+    return new PrintStmt(E, L, F, llvm::StringRef("x"));
 
 _error:
     while (Tok.getKind() != Token::eoi)
@@ -1538,10 +1618,11 @@ _error:
     return nullptr;
 }
 
-Func* Parser::parseFunc(int argumentCount){
+Func* Parser::parseFunc(){
     Func::FuncType type;
     Parameter *param1 = nullptr;
     Parameter *param2 = nullptr;
+    int argumentCount = 1;
 
     switch (Tok.getKind())
     {
@@ -1562,30 +1643,37 @@ Func* Parser::parseFunc(int argumentCount){
         break;
 
     case Token::KW_concat:
+        argumentCount = 2;
         type = Func::Concat;
         break;
     
     case Token::KW_pow:
+        argumentCount = 2;
         type = Func::Pow;
         break;
 
     case Token::KW_index:
+        argumentCount = 2;
         type = Func::Index;
         break;
 
     case Token::KW_add:
+        argumentCount = 2;
         type = Func::Add;
         break;
 
     case Token::KW_subtract:
+        argumentCount = 2;
         type = Func::Subtract;
         break;
 
     case Token::KW_multiply:
+        argumentCount = 2;
         type = Func::Multiply;
         break;
 
     case Token::KW_divide:
+        argumentCount = 2;
         type = Func::Divide;
         break;
     
@@ -1728,10 +1816,6 @@ Func* Parser::parseFunc(int argumentCount){
 
     advance();
 
-    if (expect(Token::semicolon)){
-        goto _error;
-    }
-
     return new Func(type, param1, param2);
 
 _error:
@@ -1789,7 +1873,8 @@ _error:
 
 ForStmt *Parser::parseFor()
 {
-    Assignment *First = nullptr;
+    DeclarationInt *FirstIntDec = nullptr;
+    DeclarationFloat *FirstFloatDec = nullptr;
     Logic *Second = nullptr;
     Assignment *ThirdAssign = nullptr;
     UnaryOp *ThirdUnary = nullptr;
@@ -1809,13 +1894,23 @@ ForStmt *Parser::parseFor()
 
     advance();
 
-    First = parseIntAssign();
+    switch (Tok.getKind())
+    {
+    case Token::KW_int:
+        FirstIntDec = parseIntDec();
+        break;
 
-    if (First == nullptr)
+    case Token::KW_float:
+        FirstFloatDec = parseFloatDec();
+        break;
+    
+    default:
         goto _error;
-        
-    if (First->getAssignKind() != Assignment::Assign)    // The first part can only have a '=' sign
+    }
+
+    if(FirstIntDec == nullptr && FirstFloatDec == nullptr){
         goto _error;
+    }
 
     if(expect(Token::semicolon)){
         goto _error;
@@ -1872,7 +1967,7 @@ ForStmt *Parser::parseFor()
     if (Body.empty())
         goto _error;
 
-    return new ForStmt(First, Second, ThirdAssign, ThirdUnary, Body);
+    return new ForStmt(FirstIntDec, FirstFloatDec, Second, ThirdAssign, ThirdUnary, Body);
 
 _error:
     while (Tok.getKind() != Token::eoi)
@@ -2180,8 +2275,41 @@ llvm::SmallVector<AST *> Parser::getBody(bool patternBody)
             
             Assignment *a_int;
             Assignment *a_bool;
+            Assignment *a_char;
+            Assignment *a_string;
+            Assignment *a_array;
             prev_token = Tok;
             prev_buffer = Lex.getBuffer();
+
+            a_char = parseCharAssign();
+
+            if (a_char){
+                body.push_back(a_char);
+                break;
+            }
+
+            Tok = prev_token;
+            Lex.setBufferPtr(prev_buffer);
+
+            a_string = parseStringAssign();
+
+            if (a_string){
+                body.push_back(a_string);
+                break;
+            }
+
+            Tok = prev_token;
+            Lex.setBufferPtr(prev_buffer);
+
+            a_array = parseArrayAssign();
+            
+            if (a_array){
+                body.push_back(a_array);
+                break;
+            }
+
+            Tok = prev_token;
+            Lex.setBufferPtr(prev_buffer);
 
             a_bool = parseBoolAssign();
 
@@ -2276,8 +2404,8 @@ llvm::SmallVector<AST *> Parser::getBody(bool patternBody)
         }
         case Token::KW_concat: {
             Func *f;
-            f = parseFunc(2);
-            if (f)
+            f = parseFunc();
+            if (f && Tok.getKind() == Token::semicolon)
                 body.push_back(f);
             else {
                 goto _error;
@@ -2286,8 +2414,8 @@ llvm::SmallVector<AST *> Parser::getBody(bool patternBody)
         }
         case Token::KW_pow: {
             Func *f;
-            f = parseFunc(2);
-            if (f)
+            f = parseFunc();
+            if (f && Tok.getKind() == Token::semicolon)
                 body.push_back(f);
             else {
                 goto _error;
@@ -2296,8 +2424,8 @@ llvm::SmallVector<AST *> Parser::getBody(bool patternBody)
         }
         case Token::KW_abs: {
             Func *f;
-            f = parseFunc(1);
-            if (f)
+            f = parseFunc();
+            if (f && Tok.getKind() == Token::semicolon)
                 body.push_back(f);
             else {
                 goto _error;
@@ -2307,7 +2435,7 @@ llvm::SmallVector<AST *> Parser::getBody(bool patternBody)
         case Token::KW_length: {
             Func *f;
             f = parseFunc();
-            if (f)
+            if (f && Tok.getKind() == Token::semicolon)
                 body.push_back(f);
             else {
                 goto _error;
@@ -2317,7 +2445,7 @@ llvm::SmallVector<AST *> Parser::getBody(bool patternBody)
         case Token::KW_min: {
             Func *f;
             f = parseFunc();
-            if (f)
+            if (f && Tok.getKind() == Token::semicolon)
                 body.push_back(f);
             else {
                 goto _error;
@@ -2327,7 +2455,7 @@ llvm::SmallVector<AST *> Parser::getBody(bool patternBody)
         case Token::KW_max: {
             Func *f;
             f = parseFunc();
-            if (f)
+            if (f && Tok.getKind() == Token::semicolon)
                 body.push_back(f);
             else {
                 goto _error;
@@ -2336,8 +2464,8 @@ llvm::SmallVector<AST *> Parser::getBody(bool patternBody)
         }
         case Token::KW_index: {
             Func *f;
-            f = parseFunc(2);
-            if (f)
+            f = parseFunc();
+            if (f && Tok.getKind() == Token::semicolon)
                 body.push_back(f);
             else {
                 goto _error;
@@ -2346,8 +2474,8 @@ llvm::SmallVector<AST *> Parser::getBody(bool patternBody)
         }
         case Token::KW_add: {
             Func *f;
-            f = parseFunc(2);
-            if (f)
+            f = parseFunc();
+            if (f && Tok.getKind() == Token::semicolon)
                 body.push_back(f);
             else {
                 goto _error;
@@ -2356,8 +2484,8 @@ llvm::SmallVector<AST *> Parser::getBody(bool patternBody)
         }
         case Token::KW_subtract: {
             Func *f;
-            f = parseFunc(2);
-            if (f)
+            f = parseFunc();
+            if (f && Tok.getKind() == Token::semicolon)
                 body.push_back(f);
             else {
                 goto _error;
@@ -2366,8 +2494,8 @@ llvm::SmallVector<AST *> Parser::getBody(bool patternBody)
         }
         case Token::KW_multiply: {
             Func *f;
-            f = parseFunc(2);
-            if (f)
+            f = parseFunc();
+            if (f && Tok.getKind() == Token::semicolon)
                 body.push_back(f);
             else {
                 goto _error;
@@ -2376,8 +2504,8 @@ llvm::SmallVector<AST *> Parser::getBody(bool patternBody)
         }
         case Token::KW_divide: {
             Func *f;
-            f = parseFunc(2);
-            if (f)
+            f = parseFunc();
+            if (f && Tok.getKind() == Token::semicolon)
                 body.push_back(f);
             else {
                 goto _error;
@@ -2453,8 +2581,41 @@ AST* Parser::parseStmt(){
         
         Assignment *a_int;
         Assignment *a_bool;
+        Assignment *a_char;
+        Assignment *a_string;
+        Assignment *a_array;
         prev_token = Tok;
         prev_buffer = Lex.getBuffer();
+
+        a_char = parseCharAssign();
+
+        if (a_char){
+            S = a_char;
+            break;
+        }
+
+        Tok = prev_token;
+        Lex.setBufferPtr(prev_buffer);
+
+        a_string = parseStringAssign();
+
+        if (a_string){
+            S = a_string;
+            break;
+        }
+
+        Tok = prev_token;
+        Lex.setBufferPtr(prev_buffer);
+
+        a_array = parseArrayAssign();
+        
+        if (a_array){
+            S = a_array;
+            break;
+        }
+
+        Tok = prev_token;
+        Lex.setBufferPtr(prev_buffer);
 
         a_bool = parseBoolAssign();
 
@@ -2549,8 +2710,8 @@ AST* Parser::parseStmt(){
     }
     case Token::KW_concat: {
         Func *f;
-        f = parseFunc(2);
-        if (f)
+        f = parseFunc();
+        if (f && Tok.getKind() == Token::semicolon)
             S = f;
         else {
             goto _error;
@@ -2559,8 +2720,8 @@ AST* Parser::parseStmt(){
     }
     case Token::KW_pow: {
         Func *f;
-        f = parseFunc(2);
-        if (f)
+        f = parseFunc();
+        if (f && Tok.getKind() == Token::semicolon)
             S = f;
         else {
             goto _error;
@@ -2569,8 +2730,8 @@ AST* Parser::parseStmt(){
     }
     case Token::KW_abs: {
         Func *f;
-        f = parseFunc(1);
-        if (f)
+        f = parseFunc();
+        if (f && Tok.getKind() == Token::semicolon)
             S = f;
         else {
             goto _error;
@@ -2580,7 +2741,7 @@ AST* Parser::parseStmt(){
     case Token::KW_length: {
         Func *f;
         f = parseFunc();
-        if (f)
+        if (f && Tok.getKind() == Token::semicolon)
             S = f;
         else {
             goto _error;
@@ -2590,7 +2751,7 @@ AST* Parser::parseStmt(){
     case Token::KW_min: {
         Func *f;
         f = parseFunc();
-        if (f)
+        if (f && Tok.getKind() == Token::semicolon)
             S = f;
         else {
             goto _error;
@@ -2600,7 +2761,7 @@ AST* Parser::parseStmt(){
     case Token::KW_max: {
         Func *f;
         f = parseFunc();
-        if (f)
+        if (f && Tok.getKind() == Token::semicolon)
             S = f;
         else {
             goto _error;
@@ -2609,8 +2770,8 @@ AST* Parser::parseStmt(){
     }
     case Token::KW_index: {
         Func *f;
-        f = parseFunc(2);
-        if (f)
+        f = parseFunc();
+        if (f && Tok.getKind() == Token::semicolon)
             S = f;
         else {
             goto _error;
@@ -2619,8 +2780,8 @@ AST* Parser::parseStmt(){
     }
     case Token::KW_add: {
         Func *f;
-        f = parseFunc(2);
-        if (f)
+        f = parseFunc();
+        if (f && Tok.getKind() == Token::semicolon)
             S = f;
         else {
             goto _error;
@@ -2629,8 +2790,8 @@ AST* Parser::parseStmt(){
     }
     case Token::KW_subtract: {
         Func *f;
-        f = parseFunc(2);
-        if (f)
+        f = parseFunc();
+        if (f && Tok.getKind() == Token::semicolon)
             S = f;
         else {
             goto _error;
@@ -2639,8 +2800,8 @@ AST* Parser::parseStmt(){
     }
     case Token::KW_multiply: {
         Func *f;
-        f = parseFunc(2);
-        if (f)
+        f = parseFunc();
+        if (f && Tok.getKind() == Token::semicolon)
             S = f;
         else {
             goto _error;
@@ -2649,8 +2810,8 @@ AST* Parser::parseStmt(){
     }
     case Token::KW_divide: {
         Func *f;
-        f = parseFunc(2);
-        if (f)
+        f = parseFunc();
+        if (f && Tok.getKind() == Token::semicolon)
             S = f;
         else {
             goto _error;

@@ -15,6 +15,7 @@ class DeclarationChar;
 class DeclarationString;
 class DeclarationArray;
 class Array;
+class ArrayElement;
 class Final;
 class BinaryOp;
 class UnaryOp;
@@ -262,7 +263,7 @@ public:
   }
 };
 
-class Array : public Program
+class Array : public AST
 {
 public:
   enum DataType
@@ -288,6 +289,25 @@ public:
   ValueVector::const_iterator valBegin() { return Values.begin(); }
 
   ValueVector::const_iterator valEnd() { return Values.end(); }
+
+  virtual void accept(ASTVisitor &V) override
+  {
+    V.visit(*this);
+  }
+};
+
+class ArrayElement : public AST
+{
+private:
+  llvm::StringRef var;
+  llvm::StringRef index;
+
+public:
+  ArrayElement(llvm::StringRef var, llvm::StringRef index) : var(var), index(index) {}
+
+  llvm::StringRef getVar() { return var; }
+
+  llvm::StringRef getIndex() { return index; }
 
   virtual void accept(ASTVisitor &V) override
   {
@@ -371,14 +391,17 @@ public:
 
 private:
   llvm::StringRef Ident;
-  Operator Op;                              // Operator of the unary operation
+  Operator Op;
+  ArrayElement *AE;                              // Operator of the unary operation
 
 public:
-  UnaryOp(Operator Op, llvm::StringRef I) : Op(Op), Ident(I) {}
+  UnaryOp(Operator Op, llvm::StringRef I, ArrayElement* AE) : Op(Op), Ident(I), AE(AE) {}
 
   llvm::StringRef getIdent() { return Ident; }
 
   Operator getOperator() { return Op; }
+
+  ArrayElement* getAE() { return AE; }
 
   virtual void accept(ASTVisitor &V) override
   {
@@ -473,10 +496,11 @@ private:
   Logic *RightLogicExpr;                  // Right-hand side logical expression
   llvm::StringRef RightChar;              // Right-hand side char literal
   llvm::StringRef RightString;            // Right-hand side string literal
+  Array *RightArray;            // Right-hand side array literal
   AssignKind AK;                          // Kind of assignment
 
 public:
-  Assignment(Final *L, Expr *RE, AssignKind AK, Logic *RL, llvm::StringRef RC, llvm::StringRef RS) : Left(L), RightExpr(RE), AK(AK), RightLogicExpr(RL), RightChar(RC), RightString(RS) {}
+  Assignment(Final *L, Expr *RE, AssignKind AK, Logic *RL, llvm::StringRef RC, llvm::StringRef RS, Array *RA) : Left(L), RightExpr(RE), AK(AK), RightLogicExpr(RL), RightChar(RC), RightString(RS), RightArray(RA) {}
 
   Final *getLeft() { return Left; }
 
@@ -487,6 +511,8 @@ public:
   llvm::StringRef getRightChar() { return RightChar; }
 
   llvm::StringRef getRightString() { return RightString; }
+
+  Array* getRightArray() { return RightArray; }
 
   AssignKind getAssignKind() { return AK; }
 
@@ -651,16 +677,19 @@ using BodyVector = llvm::SmallVector<AST *>;
 BodyVector Body;
 
 private:
-  Assignment *First;
+  DeclarationInt *FirstIntDec;
+  DeclarationFloat *FirstFloatDec;
   Logic *Second;
   Assignment *ThirdAssign;
   UnaryOp *ThirdUnary;
 
 
 public:
-  ForStmt(Assignment *First, Logic *Second, Assignment *ThirdAssign, UnaryOp* ThirdUnary, llvm::SmallVector<AST *> Body) : First(First), Second(Second), ThirdAssign(ThirdAssign), ThirdUnary(ThirdUnary), Body(Body) {}
+  ForStmt(DeclarationInt *FirstIntDec, DeclarationFloat *FirstFloatDec, Logic *Second, Assignment *ThirdAssign, UnaryOp* ThirdUnary, llvm::SmallVector<AST *> Body) : FirstIntDec(FirstIntDec), FirstFloatDec(FirstFloatDec), Second(Second), ThirdAssign(ThirdAssign), ThirdUnary(ThirdUnary), Body(Body) {}
 
-  Assignment *getFirst() { return First; }
+  DeclarationInt *getFirstIntDec() { return FirstIntDec; }
+
+  DeclarationFloat *getFirstFloatDec() { return FirstFloatDec; }
 
   Logic *getSecond() { return Second; }
 
@@ -784,14 +813,17 @@ class PrintStmt : public Program
 private:
   Expr *ExprParam;
   Logic *LogicExprParam;
+  Func *FuncParam;
   llvm::StringRef Var;
   
 public:
-  PrintStmt(Expr *EP, Logic *LEP, llvm::StringRef Var) : ExprParam(EP), LogicExprParam(LEP), Var(Var) {}
+  PrintStmt(Expr *EP, Logic *LEP, Func *FP, llvm::StringRef Var) : ExprParam(EP), LogicExprParam(LEP), FuncParam(FP), Var(Var) {}
 
   Expr* getExprParam() { return ExprParam; }
 
   Logic* getLogicExprParam() { return LogicExprParam; }
+
+  Func* getFuncParam() { return FuncParam; }
 
   llvm::StringRef getVar() { return Var; }
 
@@ -838,7 +870,7 @@ public:
   }
 };
 
-class Parameter : public Program
+class Parameter : public AST
 {
   public:
   enum ParamType{

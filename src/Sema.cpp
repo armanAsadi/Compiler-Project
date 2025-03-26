@@ -302,8 +302,12 @@ public:
   };
 
   virtual void visit(ForStmt &Node) override {
-    Assignment *first = Node.getFirst();
-    (*first).accept(*this);
+    DeclarationInt *firstIntDec = Node.getFirstIntDec();
+    DeclarationFloat *firstFloatDec = Node.getFirstFloatDec();
+    if(firstIntDec)
+      (*firstIntDec).accept(*this);
+    else if(firstFloatDec)
+      (*firstFloatDec).accept(*this);
 
     Logic *second = Node.getSecond();
     (*second).accept(*this);

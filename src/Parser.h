@@ -51,6 +51,7 @@ class Parser
     Assignment *parseIntAssign();
     Assignment *parseCharAssign();
     Assignment *parseStringAssign();
+    Assignment *parseArrayAssign();
     UnaryOp *parseUnary();
     Expr *parseExpr();
     Expr *parseTerm();
@@ -68,7 +69,7 @@ class Parser
     PatternStmt *parsePattern();
     PrintStmt *parsePrint();
     AST *parseStmt();
-    Func *parseFunc(int argumentCount=1);
+    Func *parseFunc();
     void parseComment();
     llvm::SmallVector<AST *> getBody(bool patternBody=false);
 
