@@ -17,11 +17,15 @@ public:
         unknown,        // in case of error at the lexical level
         ident,          // identifier
         number,         // integer literal
+        floating,       // float literal
+        character,      // char literal
+        string,         // string literal
         assign,         // =
         minus_assign,   // -=
         plus_assign,    // +=
         star_assign,    // *=
         slash_assign,   // /=
+        mod_assign,     // %=
         eq,             // ==
         neq,            // !=
         gt,             // >
@@ -30,6 +34,8 @@ public:
         lte,            // <=
         plus_plus,      // ++
         minus_minus,    // --
+        arrow,          // ->
+        underscore,     // _
         start_comment,  // /*
         end_comment,    // */
         comma,          // ,
@@ -45,17 +51,41 @@ public:
         r_paren,        // )
         l_brace,        // {
         r_brace,        // }
+        l_bracket,      // [
+        r_bracket,      // ]
         KW_int,         // int
+        KW_float,       // float
         KW_bool,        // bool
+        KW_char,        // char
+        KW_string,      // string
+        KW_array,       // array
         KW_true,        // true
         KW_false,       // false
         KW_if,          // if
         KW_else,        // else
+        KW_match,       // match
         KW_while,       // while
         KW_for,         // for
+        KW_foreach,     // foreach
         KW_and,         // and
         KW_or,          // or
-        KW_print        // print
+        KW_xor,         // xor
+        KW_in,          // in
+        KW_print,       // print
+        KW_concat,      // concat
+        KW_pow,         // pow
+        KW_abs,         // abs
+        KW_length,      // length
+        KW_min,         // min
+        KW_max,         // max
+        KW_index,       // index
+        KW_add,         // add
+        KW_subtract,    // subtract
+        KW_multiply,    // multiply
+        KW_divide,      // divide
+        KW_try,         // try
+        KW_catch,       // catch
+        KW_error        // Error
     };
 
 private:
@@ -75,6 +105,7 @@ public:
     template <typename... Ts>
     bool isOneOf(TokenKind K1, TokenKind K2, Ts... Ks)
         const { return is(K1) || isOneOf(K2, Ks...); }
+
 };
 
 class Lexer

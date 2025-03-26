@@ -17,20 +17,60 @@ Program *Parser::parseProgram()
         switch (Tok.getKind())
         {
         case Token::KW_int: {
-            DeclarationInt *d;
-            d = parseIntDec();
-            if (d)
-                data.push_back(d);
+            DeclarationInt *d_int;
+            d_int = parseIntDec();
+            if (d_int)
+                data.push_back(d_int);
+            else
+                goto _error;
+                
+            break;
+        }
+        case Token::KW_float: {
+            DeclarationFloat *d_float;
+            d_float = parseFloatDec();
+            if (d_float)
+                data.push_back(d_float);
             else
                 goto _error;
                 
             break;
         }
         case Token::KW_bool: {
-            DeclarationBool *dbool;
-            dbool = parseBoolDec();
-            if (dbool)
-                data.push_back(dbool);
+            DeclarationBool *d_bool;
+            d_bool = parseBoolDec();
+            if (d_bool)
+                data.push_back(d_bool);
+            else
+                goto _error;
+
+            break;
+        }
+        case Token::KW_char: {
+            DeclarationChar *d_char;
+            d_char = parseCharDec();
+            if (d_char)
+                data.push_back(d_char);
+            else
+                goto _error;
+
+            break;
+        }
+        case Token::KW_string: {
+            DeclarationString *d_string;
+            d_string = parseStringDec();
+            if (d_string)
+                data.push_back(d_string);
+            else
+                goto _error;
+
+            break;
+        }
+        case Token::KW_array: {
+            DeclarationArray *d_array;
+            d_array = parseArrayDec();
+            if (d_array)
+                data.push_back(d_array);
             else
                 goto _error;
 
@@ -64,11 +104,44 @@ Program *Parser::parseProgram()
                     Lex.setBufferPtr(prev_buffer);
                 }
             }
-        
+            
             Assignment *a_int;
             Assignment *a_bool;
+            Assignment *a_char;
+            Assignment *a_string;
+            Assignment *a_array;
             prev_token = Tok;
             prev_buffer = Lex.getBuffer();
+
+            a_char = parseCharAssign();
+
+            if (a_char){
+                data.push_back(a_char);
+                break;
+            }
+
+            Tok = prev_token;
+            Lex.setBufferPtr(prev_buffer);
+
+            a_string = parseStringAssign();
+
+            if (a_string){
+                data.push_back(a_string);
+                break;
+            }
+
+            Tok = prev_token;
+            Lex.setBufferPtr(prev_buffer);
+
+            a_array = parseArrayAssign();
+            
+            if (a_array){
+                data.push_back(a_array);
+                break;
+            }
+
+            Tok = prev_token;
+            Lex.setBufferPtr(prev_buffer);
 
             a_bool = parseBoolAssign();
 
@@ -76,20 +149,20 @@ Program *Parser::parseProgram()
                 data.push_back(a_bool);
                 break;
             }
+
             Tok = prev_token;
             Lex.setBufferPtr(prev_buffer);
 
             a_int = parseIntAssign();
-            if (!Tok.is(Token::semicolon))
-            {
+            
+            if (a_int){
+                data.push_back(a_int);
+                break;
+            }
+            else{
                 goto _error;
             }
-            if (a_int)
-                data.push_back(a_int);
-            else
-                goto _error;
-                
-            break;
+    
         }
         case Token::KW_if: {
             IfStmt *i;
@@ -121,11 +194,151 @@ Program *Parser::parseProgram()
             }
             break;
         }
+        case Token::KW_foreach: {
+            ForeachStmt *fe;
+            fe = parseForeach();
+            if (fe)
+                data.push_back(fe);
+            else {
+                goto _error;
+            }
+            break;
+        }
+        case Token::KW_try: {
+            TryCatchStmt *tc;
+            tc = parseTryCatch();
+            if (tc)
+                data.push_back(tc);
+            else {
+                goto _error;
+            }
+            break;
+        }
+        case Token::KW_match: {
+            MatchStmt *m;
+            m = parseMatch();
+            if (m)
+                data.push_back(m);
+            else {
+                goto _error;
+            }
+            break;
+        }
         case Token::KW_print: {
             PrintStmt *p;
             p = parsePrint();
             if (p)
                 data.push_back(p);
+            else {
+                goto _error;
+            }
+            break;
+        }
+        case Token::KW_concat: {
+            Func *f;
+            f = parseFunc();
+            if (f && Tok.getKind() == Token::semicolon)
+                data.push_back(f);
+            else {
+                goto _error;
+            }
+            break;
+        }
+        case Token::KW_pow: {
+            Func *f;
+            f = parseFunc();
+            if (f && Tok.getKind() == Token::semicolon)
+                data.push_back(f);
+            else {
+                goto _error;
+            }
+            break;
+        }
+        case Token::KW_abs: {
+            Func *f;
+            f = parseFunc();
+            if (f && Tok.getKind() == Token::semicolon)
+                data.push_back(f);
+            else {
+                goto _error;
+            }
+            break;
+        }
+        case Token::KW_length: {
+            Func *f;
+            f = parseFunc();
+            if (f && Tok.getKind() == Token::semicolon)
+                data.push_back(f);
+            else {
+                goto _error;
+            }
+            break;
+        }
+        case Token::KW_min: {
+            Func *f;
+            f = parseFunc();
+            if (f && Tok.getKind() == Token::semicolon)
+                data.push_back(f);
+            else {
+                goto _error;
+            }
+            break;
+        }
+        case Token::KW_max: {
+            Func *f;
+            f = parseFunc();
+            if (f && Tok.getKind() == Token::semicolon)
+                data.push_back(f);
+            else {
+                goto _error;
+            }
+            break;
+        }
+        case Token::KW_index: {
+            Func *f;
+            f = parseFunc();
+            if (f && Tok.getKind() == Token::semicolon)
+                data.push_back(f);
+            else {
+                goto _error;
+            }
+            break;
+        }
+        case Token::KW_add: {
+            Func *f;
+            f = parseFunc();
+            if (f && Tok.getKind() == Token::semicolon)
+                data.push_back(f);
+            else {
+                goto _error;
+            }
+            break;
+        }
+        case Token::KW_subtract: {
+            Func *f;
+            f = parseFunc();
+            if (f && Tok.getKind() == Token::semicolon)
+                data.push_back(f);
+            else {
+                goto _error;
+            }
+            break;
+        }
+        case Token::KW_multiply: {
+            Func *f;
+            f = parseFunc();
+            if (f && Tok.getKind() == Token::semicolon)
+                data.push_back(f);
+            else {
+                goto _error;
+            }
+            break;
+        }
+        case Token::KW_divide: {
+            Func *f;
+            f = parseFunc();
+            if (f && Tok.getKind() == Token::semicolon)
+                data.push_back(f);
             else {
                 goto _error;
             }
@@ -138,6 +351,7 @@ Program *Parser::parseProgram()
             break;
         }
         default: {
+            llvm::errs() << "error1\n";
             error();
 
             goto _error;
@@ -226,6 +440,77 @@ _error:
     return nullptr;
 }
 
+DeclarationFloat *Parser::parseFloatDec()
+{
+    Expr *E = nullptr;
+    llvm::SmallVector<llvm::StringRef> Vars;
+    llvm::SmallVector<Expr *> Values;
+    
+    if (expect(Token::KW_float)){
+        goto _error;
+    }
+    advance();
+    
+    if (expect(Token::ident)){
+        goto _error;
+    }
+
+    Vars.push_back(Tok.getText());
+    advance();
+
+    if (Tok.is(Token::assign))
+    {
+        advance();
+        E = parseExpr();
+        if(E){
+            Values.push_back(E);
+        }
+        else{
+            goto _error;
+        }
+    }
+    else
+    {
+        Values.push_back(new Final(Final::Floating, llvm::StringRef("0.0f")));
+    }
+    
+    
+    while (Tok.is(Token::comma))
+    {
+        advance();
+        if (expect(Token::ident)){
+            goto _error;
+        }
+            
+        Vars.push_back(Tok.getText());
+        advance();
+
+        if(Tok.is(Token::assign)){
+            advance();
+            E = parseExpr();
+            if(E){
+                Values.push_back(E);
+            }
+            else{
+                goto _error;
+            }
+        }
+        else{
+            Values.push_back(new Final(Final::Floating, llvm::StringRef("0.0f")));
+        }
+    }
+
+    if (expect(Token::semicolon)){
+        goto _error;
+    }
+
+
+    return new DeclarationFloat(Vars, Values);
+_error: 
+    while (Tok.getKind() != Token::eoi)
+        advance();
+    return nullptr;
+}
 
 DeclarationBool *Parser::parseBoolDec()
 {
@@ -297,7 +582,217 @@ _error:
     return nullptr;
 }
 
+DeclarationChar* Parser::parseCharDec(){
+    llvm::SmallVector<llvm::StringRef> Vars;
+    llvm::SmallVector<llvm::StringRef> Values;
+    
+    if (expect(Token::KW_char)){
+        goto _error;
+    }
+    advance();
+    
+    if (expect(Token::ident)){
+        goto _error;
+    }
 
+    Vars.push_back(Tok.getText());
+    advance();
+
+    if (Tok.is(Token::assign))
+    {
+        advance();
+        if(Tok.is(Token::character)){
+            Values.push_back(Tok.getText());
+            advance();
+        }
+        else{
+            goto _error;
+        }
+    }
+    else
+    {
+        Values.push_back(llvm::StringRef("\u0000"));
+    }
+    
+    
+    while (Tok.is(Token::comma))
+    {
+        advance();
+        if (expect(Token::ident)){
+            goto _error;
+        }
+            
+        Vars.push_back(Tok.getText());
+        advance();
+
+        if (Tok.is(Token::assign))
+        {
+            advance();
+            if(Tok.is(Token::character)){
+                Values.push_back(Tok.getText());
+                advance();
+            }
+            else{
+                goto _error;
+            }
+        }
+        else
+        {
+            Values.push_back(llvm::StringRef("\u0000"));
+        }
+    }
+
+    if (expect(Token::semicolon)){
+        goto _error;
+    }
+    return new DeclarationChar(Vars, Values);
+_error: 
+    while (Tok.getKind() != Token::eoi)
+        advance();
+    return nullptr;
+}
+
+DeclarationString* Parser::parseStringDec(){
+    llvm::SmallVector<llvm::StringRef> Vars;
+    llvm::SmallVector<llvm::StringRef> Values;
+    
+    if (expect(Token::KW_string)){
+        goto _error;
+    }
+    advance();
+    
+    if (expect(Token::ident)){
+        goto _error;
+    }
+
+    Vars.push_back(Tok.getText());
+    advance();
+
+    if (Tok.is(Token::assign))
+    {
+        advance();
+        if(Tok.is(Token::string)){
+            Values.push_back(Tok.getText());
+            advance();
+        }
+        else{
+            goto _error;
+        }
+    }
+    else
+    {
+        Values.push_back(llvm::StringRef("nullptr"));
+    }
+    
+    
+    while (Tok.is(Token::comma))
+    {
+        advance();
+        if (expect(Token::ident)){
+            goto _error;
+        }
+            
+        Vars.push_back(Tok.getText());
+        advance();
+
+        if (Tok.is(Token::assign))
+        {
+            advance();
+            if(Tok.is(Token::string)){
+                Values.push_back(Tok.getText());
+                advance();
+            }
+            else{
+                goto _error;
+            }
+        }
+        else
+        {
+            Values.push_back(llvm::StringRef("nullptr"));
+        }
+    }
+
+    if (expect(Token::semicolon)){
+        goto _error;
+    }
+    return new DeclarationString(Vars, Values);
+_error: 
+    while (Tok.getKind() != Token::eoi)
+        advance();
+    return nullptr;
+}
+
+DeclarationArray *Parser::parseArrayDec()
+{
+    Array *A = nullptr;
+    llvm::SmallVector<llvm::StringRef> Vars;
+    llvm::SmallVector<Array *> Values;
+    
+    if (expect(Token::KW_array)){
+        goto _error;
+    }
+    advance();
+    
+    if (expect(Token::ident)){
+        goto _error;
+    }
+
+    Vars.push_back(Tok.getText());
+    advance();
+
+    if (Tok.is(Token::assign))
+    {
+        advance();
+        A = parseArray();
+        if(A){
+            Values.push_back(A);
+        }
+        else{
+            goto _error;
+        }
+    }
+    else
+    {
+        Values.push_back(nullptr);
+    }
+    
+    
+    while (Tok.is(Token::comma))
+    {
+        advance();
+        if (expect(Token::ident)){
+            goto _error;
+        }
+            
+        Vars.push_back(Tok.getText());
+        advance();
+
+        if(Tok.is(Token::assign)){
+            advance();
+            A = parseArray();
+            if(A){
+                Values.push_back(A);
+            }
+            else{
+                goto _error;
+            }
+        }
+        else{
+            Values.push_back(nullptr);
+        }
+    }
+
+    if (expect(Token::semicolon)){
+        goto _error;
+    }
+
+
+    return new DeclarationArray(Vars, Values);
+_error: 
+    while (Tok.getKind() != Token::eoi)
+        advance();
+    return nullptr;
+}
 
 Assignment *Parser::parseBoolAssign()
 {
@@ -323,7 +818,7 @@ Assignment *Parser::parseBoolAssign()
             {
                 goto _error;
             }
-            return new Assignment(F, nullptr, AK, L);
+            return new Assignment(F, nullptr, AK, L, llvm::StringRef(), llvm::StringRef(), nullptr, nullptr);
         }
         else
             goto _error;
@@ -345,6 +840,10 @@ Assignment *Parser::parseIntAssign()
     Expr *E = nullptr;
     Final *F = nullptr;
     Assignment::AssignKind AK;
+    TernaryOp *T;
+    Token prev_token;
+    const char* prev_buffer;
+
     F = (Final *)(parseFinal());
     if (F == nullptr)
     {
@@ -376,13 +875,21 @@ Assignment *Parser::parseIntAssign()
         goto _error;
     }
     advance();
-    E = parseExpr();    // check for mathematical expr
-    if(E){
-        return new Assignment(F, E, AK, nullptr);
+    prev_token = Tok;
+    prev_buffer = Lex.getBuffer();
+    T = parseTernary();
+    if(T == nullptr){
+        Tok = prev_token;
+        Lex.setBufferPtr(prev_buffer);
+
+        E = parseExpr();
+
+        if (E == nullptr){
+            goto _error;
+        }
     }
-    else{
-        goto _error;
-    }
+
+    return new Assignment(F, E, AK, nullptr, llvm::StringRef(), llvm::StringRef(), nullptr, T);
 
 _error:
         while (Tok.getKind() != Token::eoi)
@@ -390,10 +897,127 @@ _error:
         return nullptr;
 }
 
+Assignment *Parser::parseCharAssign(){
+    Final *F = nullptr;
+    llvm::StringRef value;
+    TernaryOp* T = nullptr;
+    Token prev_token;
+    const char* prev_buffer;
+    F = (Final *)(parseFinal());
+
+    if (F == nullptr){
+        goto _error;
+    }
+
+    if (expect(Token::assign)){
+        goto _error;
+    }
+    advance();
+    prev_token = Tok;
+    prev_buffer = Lex.getBuffer();
+    T = parseTernary();
+    if(T == nullptr){
+        Tok = prev_token;
+        Lex.setBufferPtr(prev_buffer);
+
+        if (expect(Token::character)){
+            goto _error;
+        }
+        value = Tok.getText();
+        advance();        
+    }
+    
+
+    if (expect(Token::semicolon)){
+        goto _error;
+    }
+
+    return new Assignment(F, nullptr, Assignment::Assign, nullptr, value, llvm::StringRef(), nullptr, T);
+
+_error:
+    while (Tok.getKind() != Token::eoi)
+        advance();
+    return nullptr;    
+}
+
+Assignment *Parser::parseStringAssign(){
+    Final *F = nullptr;
+    llvm::StringRef value;
+    TernaryOp* T = nullptr;
+    Token prev_token;
+    const char* prev_buffer;
+    F = (Final *)(parseFinal());
+
+    if (F == nullptr){
+        goto _error;
+    }
+
+    if (expect(Token::assign)){
+        goto _error;
+    }
+    advance();
+    prev_token = Tok;
+    prev_buffer = Lex.getBuffer();
+    T = parseTernary();
+    if(T == nullptr){
+        Tok = prev_token;
+        Lex.setBufferPtr(prev_buffer);
+
+        if (expect(Token::string)){
+            goto _error;
+        }
+        value = Tok.getText();
+        advance();        
+    }
+
+    if (expect(Token::semicolon)){
+        goto _error;
+    }
+
+    return new Assignment(F, nullptr, Assignment::Assign, nullptr, llvm::StringRef(), value, nullptr, T);
+
+_error:
+    while (Tok.getKind() != Token::eoi)
+        advance();
+    return nullptr;    
+}
+
+Assignment* Parser::parseArrayAssign(){
+    Final *F = nullptr;
+    Array *A = nullptr;
+    F = (Final *)(parseFinal());
+
+    if (F == nullptr){
+        goto _error;
+    }
+
+    if (expect(Token::assign)){
+        goto _error;
+    }
+    advance();
+
+    A = parseArray();
+    if (A == nullptr){
+        goto _error;
+    }
+
+    if (expect(Token::semicolon)){
+        goto _error;
+    }
+
+    return new Assignment(F, nullptr, Assignment::Assign, nullptr, llvm::StringRef(), llvm::StringRef(), A, nullptr);
+
+_error:
+    while (Tok.getKind() != Token::eoi)
+        advance();
+    return nullptr;
+}
+
 
 UnaryOp *Parser::parseUnary()
 {
     UnaryOp* Res = nullptr;
+    ArrayElement* AE = nullptr;
     llvm::StringRef var;
 
     if (expect(Token::ident)){
@@ -402,11 +1026,29 @@ UnaryOp *Parser::parseUnary()
 
     var = Tok.getText();
     advance();
+
+    if (Tok.getKind() == Token::l_bracket){
+        advance();
+        if (Tok.isOneOf(Token::ident, Token::number)){
+            AE = new ArrayElement(var, Tok.getText());
+        }
+        else{
+            goto _error;
+        }
+
+        advance();
+        if (expect(Token::r_bracket)){
+            goto _error;
+        }
+
+        advance();
+    }
+
     if (Tok.getKind() == Token::plus_plus){
-        Res = new UnaryOp(UnaryOp::Plus_plus, var);
+        Res = new UnaryOp(UnaryOp::Plus_plus, var, AE);
     }
     else if(Tok.getKind() == Token::minus_minus){
-        Res = new UnaryOp(UnaryOp::Minus_minus, var);
+        Res = new UnaryOp(UnaryOp::Minus_minus, var, AE);
     }
     else{
         goto _error;
@@ -421,6 +1063,76 @@ _error:
         advance();
     return nullptr;
 }
+
+
+TernaryOp* Parser::parseTernary(){
+    Logic *Cond = nullptr;
+    Expr *LeftExpr = nullptr;
+    Expr *RightExpr = nullptr;
+    llvm::StringRef LeftChar;
+    llvm::StringRef RightChar;
+    llvm::StringRef LeftString;
+    llvm::StringRef RightString;
+    
+    if (Tok.getKind() == Token::character){
+        LeftChar = Tok.getText();
+        advance();
+    }
+    else if(Tok.getKind() == Token::string){
+        LeftString = Tok.getText();
+        advance();
+    }
+    else{
+        LeftExpr = parseExpr();
+        if (LeftExpr == nullptr)
+            goto _error;
+    }
+    
+
+    if (expect(Token::KW_if)){
+        goto _error;
+    }
+
+    advance();
+    Cond = parseLogic();
+    if (Cond == nullptr){
+        goto _error;
+    }
+
+    if (expect(Token::KW_else)){
+        goto _error;
+    }
+
+    advance();
+
+    if (Tok.getKind() == Token::character){
+        RightChar = Tok.getText();
+        advance();
+    }
+    else if(Tok.getKind() == Token::string){
+        RightString = Tok.getText();
+        advance();
+    }
+    else{
+        RightExpr = parseExpr();
+        if (RightExpr == nullptr)
+            goto _error;
+    }
+
+    if (expect(Token::semicolon)){
+        goto _error;
+    }
+
+    return new TernaryOp(Cond, LeftExpr, RightExpr, LeftChar, RightChar, LeftString, RightString);    
+
+_error:
+    while (Tok.getKind() != Token::eoi)
+        advance();
+    return nullptr;
+}
+
+
+
 Expr *Parser::parseExpr()
 {
     Expr *Left = parseTerm();
@@ -438,6 +1150,7 @@ Expr *Parser::parseExpr()
         else if (Tok.is(Token::minus))
             Op = BinaryOp::Minus;
         else {
+            llvm::errs() << "error2\n";
             error();
 
             goto _error;
@@ -475,6 +1188,7 @@ Expr *Parser::parseTerm()
         else if (Tok.is(Token::mod))
             Op = BinaryOp::Mod;
         else {
+            llvm::errs() << "error3\n";
             error();
 
             goto _error;
@@ -508,6 +1222,7 @@ Expr *Parser::parseFactor()
         if (Tok.is(Token::exp))
             Op = BinaryOp::Exp;
         else {
+            llvm::errs() << "error4\n";
             error();
             goto _error;
         }
@@ -537,6 +1252,11 @@ Expr *Parser::parseFinal()
         advance();
         break;
     }
+    case Token::floating:{
+        Res = new Final(Final::Floating, Tok.getText());
+        advance();
+        break;
+    }
     case Token::ident: {
         Res = new Final(Final::Ident, Tok.getText());
         Token prev_tok = Tok;
@@ -558,6 +1278,11 @@ Expr *Parser::parseFinal()
             advance();
             break;
         }
+        else if(Tok.getKind() == Token::floating){
+            Res = new SignedFloating(SignedFloating::Plus, Tok.getText());
+            advance();
+            break;
+        }
         goto _error;
     }
 
@@ -565,6 +1290,11 @@ Expr *Parser::parseFinal()
         advance();
         if (Tok.getKind() == Token::number){
             Res = new SignedNumber(SignedNumber::Minus, Tok.getText());
+            advance();
+            break;
+        }
+        else if(Tok.getKind() == Token::floating){
+            Res = new SignedFloating(SignedFloating::Minus, Tok.getText());
             advance();
             break;
         }
@@ -593,6 +1323,7 @@ Expr *Parser::parseFinal()
         
     }
     default:{
+        llvm::errs() << "error5\n";
         error();
         goto _error;
     }
@@ -604,6 +1335,176 @@ _error:
         advance();
     return nullptr;
 }
+
+Array* Parser::parseArray(){
+    Token::TokenKind kind;
+    Array::DataType type = Array::Unknown;
+    llvm::SmallVector<llvm::StringRef> Values;
+    ArrayCalculation *arrayCalc = nullptr;
+    Token prev_tok = Tok;
+    const char* prev_buffer = Lex.getBuffer();
+
+    arrayCalc = parseArrayCalc();
+
+    if (arrayCalc == nullptr){
+        Tok = prev_tok;
+        Lex.setBufferPtr(prev_buffer);
+        
+        if (expect(Token::l_bracket)){
+            goto _error;
+        }
+        advance();
+
+        if (Tok.isOneOf(Token::number, Token::floating, Token::character, 
+            Token::string, Token::KW_true, Token::KW_false)){
+
+                Values.push_back(Tok.getText());
+                kind = Tok.getKind();
+                advance();
+
+        }
+        else{
+            goto _error;
+        }
+
+        while (Tok.is(Token::comma)){
+            
+            advance();
+            if (Tok.getKind() == kind){
+                Values.push_back(Tok.getText());
+                advance();
+                continue;
+            }
+            else if ((kind == Token::KW_true || kind == Token::KW_false) && Tok.isOneOf(Token::KW_true, Token::KW_false)){
+                Values.push_back(Tok.getText());
+                advance();
+                continue;
+            }
+            else if ((kind == Token::number && Tok.is(Token::floating)) || (kind == Token::floating && Tok.is(Token::number))){
+                kind = Token::floating;
+                Values.push_back(Tok.getText());
+                advance();
+                continue;
+            }
+
+            goto _error;
+
+        }
+
+        if (expect(Token::r_bracket)){
+            goto _error;
+        }
+        advance();
+
+        switch (kind){
+            case Token::number: type = Array::Int;
+            case Token::floating: type = Array::Float;
+            case Token::KW_true: type = Array::Bool; 
+            case Token::KW_false: type = Array::Bool; 
+            case Token::character: type = Array::Char; 
+            case Token::string: type = Array::String; 
+        }
+    }
+
+    return new Array(type, Values, arrayCalc);
+
+_error:
+    while (Tok.getKind() != Token::eoi)
+        advance();
+    return nullptr;
+}
+
+ArrayCalculation* Parser::parseArrayCalc(){
+    llvm::StringRef ident;
+    llvm::StringRef number;
+    ArrayCalculation::NumType numberType;
+    ArrayCalculation::NumSign numberSign;
+    ArrayCalculation::Operator op;
+
+    if (expect(Token::ident)){
+        goto _error;
+    }
+
+    ident = Tok.getText();
+    advance();
+
+    switch (Tok.getKind())
+    {
+    case Token::plus:
+        op = ArrayCalculation::Plus;
+        break;
+
+    case Token::minus:
+        op = ArrayCalculation::Minus;
+        break;
+
+    case Token::star:
+        op = ArrayCalculation::Mul;
+        break;
+
+    case Token::slash:
+        op = ArrayCalculation::Div;
+        break;
+    
+    default:
+        goto _error;
+    }
+
+    advance();
+    
+    switch (Tok.getKind())
+    {
+    case Token::number:
+        number = Tok.getText();
+        numberType = ArrayCalculation::Int;
+        numberSign = ArrayCalculation::Pos;
+        break;
+
+    case Token::floating:
+        number = Tok.getText();
+        numberType = ArrayCalculation::Float;
+        numberSign = ArrayCalculation::Pos;
+        break;
+
+    case Token::plus: {
+        advance();
+        if (Tok.isOneOf(Token::number, Token::floating)){
+            number = Tok.getText();
+            numberType = Tok.getKind() == Token::number ? ArrayCalculation::Int : ArrayCalculation::Float;
+            numberSign = ArrayCalculation::Pos;
+            break;
+        }
+
+        goto _error;
+    }
+
+    case Token::minus: {
+        advance();
+        if (Tok.isOneOf(Token::number, Token::floating)){
+            number = Tok.getText();
+            numberType = Tok.getKind() == Token::number ? ArrayCalculation::Int : ArrayCalculation::Float;
+            numberSign = ArrayCalculation::Neg;
+            break;
+        }
+
+        goto _error;
+    }
+    
+    default:
+        goto _error;
+    }
+
+    advance();
+
+    return new ArrayCalculation(ident, number, numberType, numberSign, op);
+
+_error:
+    while (Tok.getKind() != Token::eoi)
+        advance();
+    return nullptr;  
+}
+
+
 
 Logic *Parser::parseComparison()
 {
@@ -689,6 +1590,7 @@ Logic *Parser::parseLogic()
 {
     Logic *Left = parseComparison();
     Logic *Right;
+    
     if (Left == nullptr)
     {
         goto _error;
@@ -701,6 +1603,7 @@ Logic *Parser::parseLogic()
         else if (Tok.is(Token::KW_or))
             Op = LogicalExpr::Or;
         else {
+            llvm::errs() << "error6\n";
             error();
 
             goto _error;
@@ -866,7 +1769,12 @@ _error:
 
 PrintStmt *Parser::parsePrint()
 {
-    llvm::StringRef Var;
+    Expr* E = nullptr;
+    Logic* L = nullptr;
+    Func* F = nullptr;
+    Token prev_token;
+    const char* prev_buffer;
+
     if (expect(Token::KW_print)){
         goto _error;
     }
@@ -875,25 +1783,252 @@ PrintStmt *Parser::parsePrint()
         goto _error;
     }
     advance();
-    if (expect(Token::ident)){
-        goto _error;
+
+    prev_token = Tok;
+    prev_buffer = Lex.getBuffer();
+
+    F = parseFunc();
+ 
+    if (F == nullptr){
+        Tok = prev_token;
+        Lex.setBufferPtr(prev_buffer);
+
+        L = parseLogic();
+
+        if (L == nullptr || expect(Token::r_paren)){
+            Tok = prev_token;
+            Lex.setBufferPtr(prev_buffer);
+
+            E = parseExpr();
+
+            if (E == nullptr){
+                goto _error;
+            }
+        }
     }
-    Var = Tok.getText();
-    advance();
+
     if (expect(Token::r_paren)){
         goto _error;
     }
+
     advance();
+
     if (expect(Token::semicolon)){
         goto _error;
     }
-    return new PrintStmt(Var);
+
+    return new PrintStmt(E, L, F, llvm::StringRef("x"));
 
 _error:
     while (Tok.getKind() != Token::eoi)
         advance();
     return nullptr;
+}
 
+Func* Parser::parseFunc(){
+    Func::FuncType type;
+    Parameter *param1 = nullptr;
+    Parameter *param2 = nullptr;
+    int argumentCount = 1;
+
+    switch (Tok.getKind())
+    {
+    case Token::KW_abs:
+        type = Func::Abs;
+        break;
+
+    case Token::KW_length:
+        type = Func::Length;
+        break;
+
+    case Token::KW_min:
+        type = Func::Min;
+        break;
+
+    case Token::KW_max:
+        type = Func::Max;
+        break;
+
+    case Token::KW_concat:
+        argumentCount = 2;
+        type = Func::Concat;
+        break;
+    
+    case Token::KW_pow:
+        argumentCount = 2;
+        type = Func::Pow;
+        break;
+
+    case Token::KW_index:
+        argumentCount = 2;
+        type = Func::Index;
+        break;
+
+    case Token::KW_add:
+        argumentCount = 2;
+        type = Func::Add;
+        break;
+
+    case Token::KW_subtract:
+        argumentCount = 2;
+        type = Func::Subtract;
+        break;
+
+    case Token::KW_multiply:
+        argumentCount = 2;
+        type = Func::Multiply;
+        break;
+
+    case Token::KW_divide:
+        argumentCount = 2;
+        type = Func::Divide;
+        break;
+    
+    default:
+        goto _error;
+    }
+
+    advance();
+
+    if (expect(Token::l_paren)){
+        goto _error;
+    }
+
+    advance();
+
+    switch (Tok.getKind())
+    {
+    case Token::ident:
+        param1 = new Parameter(Parameter::Ident, Tok.getText());
+        break;
+
+    case Token::number:
+        param1 = new Parameter(Parameter::Int, Tok.getText(), Parameter::Plus);
+        break;
+
+    case Token::floating:
+        param1 = new Parameter(Parameter::Float, Tok.getText(), Parameter::Plus);
+        break;
+
+    case Token::string:
+        param1 = new Parameter(Parameter::String, Tok.getText());
+        break;
+
+    case Token::plus: {
+        
+        advance();
+        if (Tok.is(Token::number)){
+            param1 = new Parameter(Parameter::Int, Tok.getText(), Parameter::Plus);
+            break;
+        }
+        else if (Tok.is(Token::floating)){
+            param1 = new Parameter(Parameter::Float, Tok.getText(), Parameter::Plus);
+            break;
+        }
+
+        goto _error;
+
+    }
+
+    case Token::minus: {
+        
+        advance();
+        if (Tok.is(Token::number)){
+            param1 = new Parameter(Parameter::Int, Tok.getText(), Parameter::Minus);
+            break;
+        }
+        else if (Tok.is(Token::floating)){
+            param1 = new Parameter(Parameter::Float, Tok.getText(), Parameter::Minus);
+            break;
+        }
+
+        goto _error;
+
+    }
+    
+    default:
+        goto _error;
+    }
+
+    advance();
+
+    if (argumentCount == 2){
+
+        if (expect(Token::comma)){
+            goto _error;
+        }
+
+        advance();
+
+        switch (Tok.getKind())
+        {
+        case Token::ident:
+            param2 = new Parameter(Parameter::Ident, Tok.getText());
+            break;
+
+        case Token::number:
+            param2 = new Parameter(Parameter::Int, Tok.getText(), Parameter::Plus);
+            break;
+
+        case Token::floating:
+            param2 = new Parameter(Parameter::Float, Tok.getText(), Parameter::Plus);
+            break;
+
+        case Token::string:
+            param2 = new Parameter(Parameter::String, Tok.getText());
+            break;
+
+        case Token::plus: {
+        
+            advance();
+            if (Tok.is(Token::number)){
+                param2 = new Parameter(Parameter::Int, Tok.getText(), Parameter::Plus);
+                break;
+            }
+            else if (Tok.is(Token::floating)){
+                param2 = new Parameter(Parameter::Float, Tok.getText(), Parameter::Plus);
+                break;
+            }
+
+            goto _error;
+
+        }
+
+        case Token::minus: {
+        
+            advance();
+            if (Tok.is(Token::number)){
+                param2 = new Parameter(Parameter::Int, Tok.getText(), Parameter::Minus);
+                break;
+            }
+            else if (Tok.is(Token::floating)){
+                param2 = new Parameter(Parameter::Float, Tok.getText(), Parameter::Minus);
+                break;
+            }
+
+            goto _error;
+
+        }
+        
+        default:
+            goto _error;
+        }
+
+        advance();
+    }
+
+    if (expect(Token::r_paren)){
+        goto _error;
+    }
+
+    advance();
+
+    return new Func(type, param1, param2);
+
+_error:
+    while (Tok.getKind() != Token::eoi)
+        advance();
+    return nullptr;
 }
 
 WhileStmt *Parser::parseWhile()
@@ -945,7 +2080,8 @@ _error:
 
 ForStmt *Parser::parseFor()
 {
-    Assignment *First = nullptr;
+    DeclarationInt *FirstIntDec = nullptr;
+    DeclarationFloat *FirstFloatDec = nullptr;
     Logic *Second = nullptr;
     Assignment *ThirdAssign = nullptr;
     UnaryOp *ThirdUnary = nullptr;
@@ -965,13 +2101,23 @@ ForStmt *Parser::parseFor()
 
     advance();
 
-    First = parseIntAssign();
+    switch (Tok.getKind())
+    {
+    case Token::KW_int:
+        FirstIntDec = parseIntDec();
+        break;
 
-    if (First == nullptr)
+    case Token::KW_float:
+        FirstFloatDec = parseFloatDec();
+        break;
+    
+    default:
         goto _error;
-        
-    if (First->getAssignKind() != Assignment::Assign)    // The first part can only have a '=' sign
+    }
+
+    if(FirstIntDec == nullptr && FirstFloatDec == nullptr){
         goto _error;
+    }
 
     if(expect(Token::semicolon)){
         goto _error;
@@ -1028,13 +2174,254 @@ ForStmt *Parser::parseFor()
     if (Body.empty())
         goto _error;
 
-    return new ForStmt(First, Second, ThirdAssign, ThirdUnary, Body);
+    return new ForStmt(FirstIntDec, FirstFloatDec, Second, ThirdAssign, ThirdUnary, Body);
 
 _error:
     while (Tok.getKind() != Token::eoi)
         advance();
     return nullptr;  
 
+}
+
+ForeachStmt* Parser::parseForeach(){
+    llvm::StringRef Left;
+    llvm::StringRef Right;
+    llvm::SmallVector<AST *> Body;
+    
+    if (expect(Token::KW_foreach)){
+        goto _error;
+    }
+
+    advance();
+
+    if (expect(Token::l_paren)){
+        goto _error;
+    }
+
+    advance();
+
+    if (expect(Token::ident)){
+        goto _error;
+    }
+
+    Left = Tok.getText();
+    advance();
+
+    if (expect(Token::KW_in)){
+        goto _error;
+    }
+
+    advance();
+
+    if (expect(Token::ident)){
+        goto _error;
+    }
+
+    Right = Tok.getText();
+    advance();
+
+    if (expect(Token::r_paren)){
+        goto _error;
+    }
+
+    advance();
+
+    if (expect(Token::l_brace)){
+        goto _error;
+    }
+
+    advance();
+
+    Body = getBody();
+
+    if (Body.empty())
+        goto _error; 
+
+    return new ForeachStmt(Left, Right, Body);   
+
+_error:
+    while (Tok.getKind() != Token::eoi)
+        advance();
+    return nullptr;   
+}
+
+
+TryCatchStmt* Parser::parseTryCatch(){
+    llvm::StringRef Error;
+    llvm::SmallVector<AST *> TryBody;
+    llvm::SmallVector<AST *> CatchBody;
+    
+    if (expect(Token::KW_try)){
+        goto _error;
+    }
+
+    advance();
+
+    if (expect(Token::l_brace)){
+        goto _error;
+    }
+
+    advance();
+
+    TryBody = getBody();
+    if (TryBody.empty())
+        goto _error;
+
+    advance(); 
+
+    if (expect(Token::KW_catch)){
+        goto _error;
+    }
+
+    advance();
+
+    if (expect(Token::l_paren)){
+        goto _error;
+    }
+
+    advance();
+
+    if (expect(Token::KW_error)){
+        goto _error;
+    }
+
+    advance();
+    
+
+    if (expect(Token::ident)){
+        goto _error;
+    }
+
+    Error = Tok.getText();
+    advance();
+
+    if (expect(Token::r_paren)){
+        goto _error;
+    }
+
+    advance();
+
+    if (expect(Token::l_brace)){
+        goto _error;
+    }
+
+    advance();
+
+    CatchBody = getBody();
+    if (CatchBody.empty())
+        goto _error; 
+
+    return new TryCatchStmt(Error, TryBody, CatchBody);     
+
+_error:
+    while (Tok.getKind() != Token::eoi)
+        advance();
+    return nullptr;
+}
+
+MatchStmt* Parser::parseMatch(){
+  llvm::StringRef Ident;
+  llvm::SmallVector<PatternStmt *> Patterns;
+
+  if (expect(Token::KW_match)){
+    goto _error;
+  }
+
+  advance();
+
+  if (expect(Token::ident)){
+    goto _error;
+  }
+
+  Ident = Tok.getText();
+  advance();
+
+  if (expect(Token::l_brace)){
+    goto _error;
+  }
+
+  do
+  {
+
+    advance();
+    if (Tok.is(Token::r_brace))
+        break;
+    
+    PatternStmt *P = nullptr;
+    P = parsePattern();
+    
+    if(P){
+        Patterns.push_back(P);
+    }
+    else{
+        goto _error;
+    }
+
+    if (Tok.is(Token::r_brace))
+        break;
+    if (expect(Token::comma))
+        goto _error;
+    
+  } while(true);
+
+  return new MatchStmt(Ident, Patterns);
+
+_error:
+    while (Tok.getKind() != Token::eoi)
+        advance();
+    return nullptr;    
+}
+
+PatternStmt* Parser::parsePattern(){
+    llvm::StringRef Value;
+    PatternStmt::DataType ValueType;
+    AST *stmt;
+    
+    switch (Tok.getKind())
+    {
+    case Token::number:
+        ValueType = PatternStmt::Int;
+        break;
+
+    case Token::floating:
+        ValueType = PatternStmt::Float;
+        break;
+
+    case Token::character:
+        ValueType = PatternStmt::Char;
+        break;
+
+    case Token::string:
+        ValueType = PatternStmt::String;
+        break;
+
+    case Token::underscore:
+        ValueType = PatternStmt::Default;
+        break;
+    
+    default:
+        goto _error;
+    }
+
+    Value = Tok.getText();
+    advance();
+
+    if (expect(Token::arrow)){
+        goto _error;
+    }
+
+    advance();
+
+    stmt = parseStmt();
+    if (!stmt)
+        goto _error; 
+
+    return new PatternStmt(Value, ValueType, stmt);
+
+_error:
+    while (Tok.getKind() != Token::eoi)
+        advance();
+    return nullptr;
 }
 
 void Parser::parseComment()
@@ -1052,7 +2439,7 @@ _error:
         advance();
 }
 
-llvm::SmallVector<AST *> Parser::getBody()
+llvm::SmallVector<AST *> Parser::getBody(bool patternBody)
 {
     llvm::SmallVector<AST *> body;
     while (!Tok.is(Token::r_brace))
@@ -1095,8 +2482,41 @@ llvm::SmallVector<AST *> Parser::getBody()
             
             Assignment *a_int;
             Assignment *a_bool;
+            Assignment *a_char;
+            Assignment *a_string;
+            Assignment *a_array;
             prev_token = Tok;
             prev_buffer = Lex.getBuffer();
+
+            a_char = parseCharAssign();
+
+            if (a_char){
+                body.push_back(a_char);
+                break;
+            }
+
+            Tok = prev_token;
+            Lex.setBufferPtr(prev_buffer);
+
+            a_string = parseStringAssign();
+
+            if (a_string){
+                body.push_back(a_string);
+                break;
+            }
+
+            Tok = prev_token;
+            Lex.setBufferPtr(prev_buffer);
+
+            a_array = parseArrayAssign();
+            
+            if (a_array){
+                body.push_back(a_array);
+                break;
+            }
+
+            Tok = prev_token;
+            Lex.setBufferPtr(prev_buffer);
 
             a_bool = parseBoolAssign();
 
@@ -1149,11 +2569,151 @@ llvm::SmallVector<AST *> Parser::getBody()
             }
             break;
         }
+        case Token::KW_foreach: {
+            ForeachStmt *fe;
+            fe = parseForeach();
+            if (fe)
+                body.push_back(fe);
+            else {
+                goto _error;
+            }
+            break;
+        }
+        case Token::KW_try: {
+            TryCatchStmt *tc;
+            tc = parseTryCatch();
+            if (tc)
+                body.push_back(tc);
+            else {
+                goto _error;
+            }
+            break;
+        }
+        case Token::KW_match: {
+            MatchStmt *m;
+            m = parseMatch();
+            if (m)
+                body.push_back(m);
+            else {
+                goto _error;
+            }
+            break;
+        }
         case Token::KW_print: {
             PrintStmt *p;
             p = parsePrint();
             if (p)
                 body.push_back(p);
+            else {
+                goto _error;
+            }
+            break;
+        }
+        case Token::KW_concat: {
+            Func *f;
+            f = parseFunc();
+            if (f && Tok.getKind() == Token::semicolon)
+                body.push_back(f);
+            else {
+                goto _error;
+            }
+            break;
+        }
+        case Token::KW_pow: {
+            Func *f;
+            f = parseFunc();
+            if (f && Tok.getKind() == Token::semicolon)
+                body.push_back(f);
+            else {
+                goto _error;
+            }
+            break;
+        }
+        case Token::KW_abs: {
+            Func *f;
+            f = parseFunc();
+            if (f && Tok.getKind() == Token::semicolon)
+                body.push_back(f);
+            else {
+                goto _error;
+            }
+            break;
+        }
+        case Token::KW_length: {
+            Func *f;
+            f = parseFunc();
+            if (f && Tok.getKind() == Token::semicolon)
+                body.push_back(f);
+            else {
+                goto _error;
+            }
+            break;
+        }
+        case Token::KW_min: {
+            Func *f;
+            f = parseFunc();
+            if (f && Tok.getKind() == Token::semicolon)
+                body.push_back(f);
+            else {
+                goto _error;
+            }
+            break;
+        }
+        case Token::KW_max: {
+            Func *f;
+            f = parseFunc();
+            if (f && Tok.getKind() == Token::semicolon)
+                body.push_back(f);
+            else {
+                goto _error;
+            }
+            break;
+        }
+        case Token::KW_index: {
+            Func *f;
+            f = parseFunc();
+            if (f && Tok.getKind() == Token::semicolon)
+                body.push_back(f);
+            else {
+                goto _error;
+            }
+            break;
+        }
+        case Token::KW_add: {
+            Func *f;
+            f = parseFunc();
+            if (f && Tok.getKind() == Token::semicolon)
+                body.push_back(f);
+            else {
+                goto _error;
+            }
+            break;
+        }
+        case Token::KW_subtract: {
+            Func *f;
+            f = parseFunc();
+            if (f && Tok.getKind() == Token::semicolon)
+                body.push_back(f);
+            else {
+                goto _error;
+            }
+            break;
+        }
+        case Token::KW_multiply: {
+            Func *f;
+            f = parseFunc();
+            if (f && Tok.getKind() == Token::semicolon)
+                body.push_back(f);
+            else {
+                goto _error;
+            }
+            break;
+        }
+        case Token::KW_divide: {
+            Func *f;
+            f = parseFunc();
+            if (f && Tok.getKind() == Token::semicolon)
+                body.push_back(f);
             else {
                 goto _error;
             }
@@ -1166,6 +2726,7 @@ llvm::SmallVector<AST *> Parser::getBody()
             break;
         }
         default:{
+            llvm::errs() << "error7\n";
             error();
 
             goto _error;
@@ -1184,4 +2745,307 @@ _error:
         advance();
     return body;
 
+}
+
+AST* Parser::parseStmt(){
+    AST *S = nullptr;
+
+    switch (Tok.getKind())
+    {
+        
+    case Token::ident:{
+        Token prev_token = Tok;
+        const char* prev_buffer = Lex.getBuffer();
+        UnaryOp *u;
+        u = parseUnary();
+        if (Tok.is(Token::semicolon))
+        {
+            if (u)
+            {
+                S = u;
+                break;
+            }
+            else{
+
+                goto _error;
+            }
+                
+        }
+        else
+        {
+            if (u)
+            {
+
+                goto _error;
+            }
+            else{
+                Tok = prev_token;
+                Lex.setBufferPtr(prev_buffer);
+            }
+                
+        }
+
+        
+        Assignment *a_int;
+        Assignment *a_bool;
+        Assignment *a_char;
+        Assignment *a_string;
+        Assignment *a_array;
+        prev_token = Tok;
+        prev_buffer = Lex.getBuffer();
+
+        a_char = parseCharAssign();
+
+        if (a_char){
+            S = a_char;
+            break;
+        }
+
+        Tok = prev_token;
+        Lex.setBufferPtr(prev_buffer);
+
+        a_string = parseStringAssign();
+
+        if (a_string){
+            S = a_string;
+            break;
+        }
+
+        Tok = prev_token;
+        Lex.setBufferPtr(prev_buffer);
+
+        a_array = parseArrayAssign();
+        
+        if (a_array){
+            S = a_array;
+            break;
+        }
+
+        Tok = prev_token;
+        Lex.setBufferPtr(prev_buffer);
+
+        a_bool = parseBoolAssign();
+
+        if (a_bool){
+            S = a_bool;
+            break;
+        }
+        Tok = prev_token;
+        Lex.setBufferPtr(prev_buffer);
+
+        a_int = parseIntAssign();
+        if (a_int)
+            S = a_int;
+        else
+            goto _error;
+        if (!Tok.is(Token::semicolon))
+        {
+            goto _error;
+        }
+
+        break;
+    }
+    case Token::KW_if: {
+        IfStmt *i;
+        i = parseIf();
+        if (i)
+            S = i;
+        else
+            goto _error;
+        
+        break;
+    }
+    case Token::KW_while:{
+        WhileStmt *w;
+        w = parseWhile();
+        if (w)
+            S = w;
+        else {
+            goto _error;
+        }
+        break;
+    }
+    case Token::KW_for:{
+        ForStmt *f;
+        f = parseFor();
+        if (f)
+            S = f;
+        else {
+            goto _error;
+        }
+        break;
+    }
+    case Token::KW_foreach: {
+        ForeachStmt *fe;
+        fe = parseForeach();
+        if (fe)
+            S = fe;
+        else {
+            goto _error;
+        }
+        break;
+    }
+    case Token::KW_try: {
+        TryCatchStmt *tc;
+        tc = parseTryCatch();
+        if (tc)
+            S = tc;
+        else {
+            goto _error;
+        }
+        break;
+    }
+    case Token::KW_match: {
+        MatchStmt *m;
+        m = parseMatch();
+        if (m)
+            S = m;
+        else {
+            goto _error;
+        }
+        break;
+    }
+    case Token::KW_print: {
+        PrintStmt *p;
+        p = parsePrint();
+        if (p)
+            S = p;
+        else {
+            goto _error;
+        }
+        break;
+    }
+    case Token::KW_concat: {
+        Func *f;
+        f = parseFunc();
+        if (f && Tok.getKind() == Token::semicolon)
+            S = f;
+        else {
+            goto _error;
+        }
+        break;
+    }
+    case Token::KW_pow: {
+        Func *f;
+        f = parseFunc();
+        if (f && Tok.getKind() == Token::semicolon)
+            S = f;
+        else {
+            goto _error;
+        }
+        break;
+    }
+    case Token::KW_abs: {
+        Func *f;
+        f = parseFunc();
+        if (f && Tok.getKind() == Token::semicolon)
+            S = f;
+        else {
+            goto _error;
+        }
+        break;
+    }
+    case Token::KW_length: {
+        Func *f;
+        f = parseFunc();
+        if (f && Tok.getKind() == Token::semicolon)
+            S = f;
+        else {
+            goto _error;
+        }
+        break;
+    }
+    case Token::KW_min: {
+        Func *f;
+        f = parseFunc();
+        if (f && Tok.getKind() == Token::semicolon)
+            S = f;
+        else {
+            goto _error;
+        }
+        break;
+    }
+    case Token::KW_max: {
+        Func *f;
+        f = parseFunc();
+        if (f && Tok.getKind() == Token::semicolon)
+            S = f;
+        else {
+            goto _error;
+        }
+        break;
+    }
+    case Token::KW_index: {
+        Func *f;
+        f = parseFunc();
+        if (f && Tok.getKind() == Token::semicolon)
+            S = f;
+        else {
+            goto _error;
+        }
+        break;
+    }
+    case Token::KW_add: {
+        Func *f;
+        f = parseFunc();
+        if (f && Tok.getKind() == Token::semicolon)
+            S = f;
+        else {
+            goto _error;
+        }
+        break;
+    }
+    case Token::KW_subtract: {
+        Func *f;
+        f = parseFunc();
+        if (f && Tok.getKind() == Token::semicolon)
+            S = f;
+        else {
+            goto _error;
+        }
+        break;
+    }
+    case Token::KW_multiply: {
+        Func *f;
+        f = parseFunc();
+        if (f && Tok.getKind() == Token::semicolon)
+            S = f;
+        else {
+            goto _error;
+        }
+        break;
+    }
+    case Token::KW_divide: {
+        Func *f;
+        f = parseFunc();
+        if (f && Tok.getKind() == Token::semicolon)
+            S = f;
+        else {
+            goto _error;
+        }
+        break;
+    }
+    case Token::start_comment: {
+        parseComment();
+        if (!Tok.is(Token::end_comment))
+            goto _error;
+        break;
+    }
+    default:{
+        llvm::errs() << "error7\n";
+        error();
+
+        goto _error;
+        break;
+    }
+    }
+
+    advance();
+
+    return S;
+
+_error:
+    while (Tok.getKind() != Token::eoi)
+        advance();
+    return nullptr;
 }

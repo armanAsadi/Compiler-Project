@@ -464,7 +464,10 @@ ns{
       llvm::BasicBlock* ForBodyBB = llvm::BasicBlock::Create(M->getContext(), "for.body", Builder.GetInsertBlock()->getParent());
       llvm::BasicBlock* AfterForBB = llvm::BasicBlock::Create(M->getContext(), "after.for", Builder.GetInsertBlock()->getParent());
 
-      Node.getFirst()->accept(*this);
+      if (Node.getFirstIntDec())
+        Node.getFirstIntDec()->accept(*this);
+      else if (Node.getFirstFloatDec())
+        Node.getFirstFloatDec()->accept(*this);
 
       Builder.CreateBr(ForCondBB); //?
 

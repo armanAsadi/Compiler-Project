@@ -42,22 +42,38 @@ class Parser
 
     Program *parseProgram();
     DeclarationInt *parseIntDec();
+    DeclarationFloat *parseFloatDec();
     DeclarationBool *parseBoolDec();
+    DeclarationChar *parseCharDec();
+    DeclarationString *parseStringDec();
+    DeclarationArray *parseArrayDec();
     Assignment *parseBoolAssign();
     Assignment *parseIntAssign();
+    Assignment *parseCharAssign();
+    Assignment *parseStringAssign();
+    Assignment *parseArrayAssign();
     UnaryOp *parseUnary();
+    TernaryOp *parseTernary();
     Expr *parseExpr();
     Expr *parseTerm();
     Expr *parseFinal();
     Expr *parseFactor();
     Logic *parseLogic();
     Logic *parseComparison();
+    Array *parseArray();
+    ArrayCalculation *parseArrayCalc();
     IfStmt *parseIf();
     WhileStmt *parseWhile();
     ForStmt *parseFor();
+    ForeachStmt *parseForeach();
+    TryCatchStmt *parseTryCatch();
+    MatchStmt *parseMatch();
+    PatternStmt *parsePattern();
     PrintStmt *parsePrint();
+    AST *parseStmt();
+    Func *parseFunc();
     void parseComment();
-    llvm::SmallVector<AST *> getBody();
+    llvm::SmallVector<AST *> getBody(bool patternBody=false);
 
 public:
     // initializes all members and retrieves the first token
